@@ -181,6 +181,9 @@ cat << 'EOF' > "$TARGET_DIR/index.html"
                 </button>
             </div>
             <p class="credit">Built by Finch</p>
+            <p class="privacy-note">
+                This site uses <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a> for privacy-friendly analytics (no cookies).
+            </p>
         </div>
     </footer>
 
@@ -190,6 +193,10 @@ cat << 'EOF' > "$TARGET_DIR/index.html"
     </div>
 
     <script src="script.js"></script>
+
+    <!-- GoatCounter analytics (privacy-friendly, no cookies) -->
+    <script data-goatcounter="https://ithinkandicode.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
 EOF
@@ -252,6 +259,9 @@ footer h3 { font-family: var(--font-serif); color: var(--accent); margin-bottom:
 .btn:hover { background: var(--btn-hover); transform: scale(1.0775); }
 .tooltip { visibility: hidden; background-color: var(--accent); color: #fff; text-align: center; border-radius: 50px; padding: 5px 10px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -50px; opacity: 0; transition: opacity 0.3s; font-size: 0.8rem; }
 .credit { margin-top: 20px; font-size: 0.8rem; color: var(--accent-light); }
+.privacy-note { margin-top: 10px; font-size: 0.75rem; color: var(--text-secondary); }
+.privacy-note a { color: var(--accent); text-decoration: none; }
+.privacy-note a:hover { text-decoration: underline; }
 .lightbox { display: none; position: fixed; z-index: 1000; padding-top: 50px; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(112,63,63,0.9); }
 .lightbox-content { margin: auto; display: block; width: 80%; max-width: 1200px; max-height: 80vh; object-fit: contain; border-radius: 0.375rem; }
 .close { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
