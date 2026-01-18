@@ -3,13 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bred's Commissions</title>
+    <meta name="description" content="Bred's digital art commission services. Book custom artwork - Busts, Half Body, Full Body, and Chibi styles available.">
+    <meta name="theme-color" content="#916A5D">
+    <meta property="og:title" content="Bred's Commissions">
+    <meta property="og:description" content="Professional digital art commissions by Bred. Sketches, flat color, and fully rendered pieces.">
+    <meta property="og:image" content="/images/bg.png">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    
+    <title>Bred's Commissions - Digital Art</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=Inter:wght@400;500&family=Kosugi&display=swap" rel="stylesheet">
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
 
     <header class="hero">
         <div class="container">
@@ -23,20 +32,29 @@
         </div>
     </header>
 
-    <main class="container">
+    <main class="container" id="main-content">
         
-        <section id="gallery" class="gallery-grid">
-            <div class="gallery-item">
-                <img src="assets/angentela_commission.png" alt="Commission Work" loading="lazy">
+        <section class="gallery-section">
+            <h2>Portfolio Gallery</h2>
+            <div class="gallery-filters" role="tablist">
+                <button class="filter-btn active" data-filter="all" role="tab" aria-selected="true" aria-controls="gallery">All Work</button>
+                <button class="filter-btn" data-filter="commission" role="tab" aria-selected="false" aria-controls="gallery">Commissions</button>
+                <button class="filter-btn" data-filter="fanart" role="tab" aria-selected="false" aria-controls="gallery">Fanart</button>
+                <button class="filter-btn" data-filter="wip" role="tab" aria-selected="false" aria-controls="gallery">WIP</button>
             </div>
-            <div class="gallery-item">
-                <img src="assets/house_of_wrath.png" alt="House of Wrath" loading="lazy">
+            <div id="gallery" class="gallery-grid" role="grid">
+            <div class="gallery-item" data-category="commission" role="gridcell">
+                <img src="assets/angentela_commission.png" alt="Commission Work - Character Portrait" loading="lazy">
             </div>
-            <div class="gallery-item">
+            <div class="gallery-item" data-category="fanart" role="gridcell">
+                <img src="assets/house_of_wrath.png" alt="House of Wrath - Fanart" loading="lazy">
+            </div>
+            <div class="gallery-item" data-category="fanart" role="gridcell">
                 <img src="assets/xie_lian.png" alt="Xie Lian Fanart" loading="lazy">
             </div>
-            <div class="gallery-item">
-                <img src="assets/into_the_abyss_wip.jpg" alt="WIP Line Art" loading="lazy">
+            <div class="gallery-item" data-category="wip" role="gridcell">
+                <img src="assets/into_the_abyss_wip.jpg" alt="WIP Line Art - Into the Abyss" loading="lazy">
+            </div>
             </div>
         </section>
 
@@ -139,10 +157,19 @@
         </div>
     </footer>
 
-    <div id="lightbox" class="lightbox">
-        <span class="close">&times;</span>
-        <img class="lightbox-content" id="lightbox-img">
+    <div id="lightbox" class="lightbox" role="dialog" aria-label="Image Viewer">
+        <button class="lightbox-close" aria-label="Close image viewer">&times;</button>
+        <div class="lightbox-container">
+            <img class="lightbox-content" id="lightbox-img" alt="Full size preview">
+            <div class="lightbox-controls">
+                <button class="lightbox-nav prev-btn" aria-label="Previous image">←</button>
+                <span class="lightbox-counter"><span id="current-img">1</span>/<span id="total-imgs">4</span></span>
+                <button class="lightbox-nav next-btn" aria-label="Next image">→</button>
+            </div>
+        </div>
     </div>
+
+    <button id="back-to-top" class="back-to-top" aria-label="Back to top" title="Back to top">↑</button>
 
     <script src="script.js"></script>
 </body>
