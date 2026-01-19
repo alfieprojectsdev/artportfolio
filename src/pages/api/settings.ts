@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { db, siteSettings } from '../../db';
 import { eq } from 'drizzle-orm';
+import { checkAuth, unauthorizedResponse } from '../../lib/auth';
 
 // GET /api/settings - Get site settings
 export const GET: APIRoute = async () => {
@@ -49,6 +50,10 @@ export const GET: APIRoute = async () => {
 
 // PUT /api/settings - Update site settings
 export const PUT: APIRoute = async ({ request }) => {
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
   try {
     const body = await request.json();
 

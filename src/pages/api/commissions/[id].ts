@@ -1,9 +1,14 @@
 import type { APIRoute } from 'astro';
 import { db, commissionRequests } from '../../../db';
 import { eq } from 'drizzle-orm';
+import { checkAuth, unauthorizedResponse } from '../../../lib/auth';
 
 // PATCH /api/commissions/:id - Update commission status
 export const PATCH: APIRoute = async ({ params, request }) => {
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
   try {
     const id = parseInt(params.id!);
     const body = await request.json();
@@ -45,7 +50,11 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 };
 
 // DELETE /api/commissions/:id - Delete commission request
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
   try {
     const id = parseInt(params.id!);
 
