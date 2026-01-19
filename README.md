@@ -1,35 +1,43 @@
-# Bred's Art Commissions
+# Astro Starter Kit: Minimal
 
-A static portfolio website for digital art commissions.
-
-**Live site:** https://alfieprojectsdev.github.io/artportfolio/
-
-## Features
-
-- Gallery with lightbox image viewer
-- Commission pricing (Bust, Half Body, Full Body, Chibi)
-- Terms of Service and Do's/Don'ts sections
-- Discord username copy-to-clipboard
-- Responsive design with warm color palette
-
-## Build
-
-The site is generated via a bash script:
-
-```bash
-./scaffold_portfolio.sh
+```sh
+npm create astro@latest -- --template minimal
 ```
 
-This copies art assets from a source directory and generates `index.html`, `style.css`, and `script.js`.
+> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
 
-## Tech Stack
+## 🚀 Project Structure
 
-- Vanilla HTML/CSS/JavaScript
-- Google Fonts (Fraunces, Kosugi, Inter)
-- CSS Grid layouts
-- No build tools or frameworks required
+Inside of your Astro project, you'll see the following folders and files:
 
-## Contact
+```text
+/
+├── public/
+├── src/
+│   └── pages/
+│       └── index.astro
+└── package.json
+```
 
-- Instagram: [@demented.toast](https://instagram.com/demented.toast)
-- Discord: toasted_insanity
+Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+
+There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+
+Any static assets, like images, can be placed in the `public/` directory.
+
+## 🧞 Commands
+
+All commands are run from the root of the project, from a terminal:
+
+| Command                   | Action                                           |
+| :------------------------ | :----------------------------------------------- |
+| `npm install`             | Installs dependencies                            |
+| `npm run dev`             | Starts local dev server at `localhost:4321`      |
+| `npm run build`           | Build your production site to `./dist/`          |
+| `npm run preview`         | Preview your build locally, before deploying     |
+| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
+| `npm run astro -- --help` | Get help using the Astro CLI                     |
+
+## 👀 Want to learn more?
+
+Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
