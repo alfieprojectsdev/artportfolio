@@ -37,6 +37,16 @@ All commands are run from the root of the project, from a terminal:
 | `npm run preview`         | Preview your build locally, before deploying     |
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
+| `npm run db:seed`         | Seeds the database with sample data              |
+
+## 🗄️ Database Setup
+
+This project uses Neon (PostgreSQL) and Cloudinary. You need to set up your environment variables in a `.env` file (see `.env.example`).
+
+1.  **Set up `.env`**: Copy `.env.example` to `.env` and fill in your credentials.
+2.  **Seed Database**: Run `npm run db:seed` to populate the database with initial portfolio items and settings.
+
+If the database is not connected or empty, the site will display fallback placeholder content.
 
 ## 👀 Want to learn more?
 

@@ -6,6 +6,43 @@ import { desc, eq } from 'drizzle-orm';
 let galleryItems: typeof portfolioItems.$inferSelect[] = [];
 let settings: typeof siteSettings.$inferSelect | null = null;
 
+// Fallback data to ensure gallery is not empty if DB is not connected/empty
+const defaultGalleryItems: typeof portfolioItems.$inferSelect[] = [
+  {
+    id: 1,
+    title: 'Placeholder Art 1',
+    imageUrl: 'https://placehold.co/600x400/png',
+    thumbnailUrl: 'https://placehold.co/600x400/png',
+    category: 'commission',
+    altText: 'Placeholder artwork',
+    featured: true,
+    displayOrder: 1,
+    createdAt: new Date(),
+  },
+  {
+    id: 2,
+    title: 'Placeholder Art 2',
+    imageUrl: 'https://placehold.co/400x600/png',
+    thumbnailUrl: 'https://placehold.co/400x600/png',
+    category: 'fanart',
+    altText: 'Placeholder artwork',
+    featured: true,
+    displayOrder: 2,
+    createdAt: new Date(),
+  },
+  {
+    id: 3,
+    title: 'Placeholder Art 3',
+    imageUrl: 'https://placehold.co/600x600/png',
+    thumbnailUrl: 'https://placehold.co/600x600/png',
+    category: 'original',
+    altText: 'Placeholder artwork',
+    featured: true,
+    displayOrder: 3,
+    createdAt: new Date(),
+  },
+];
+
 try {
   galleryItems = await db
     .select()
@@ -18,6 +55,11 @@ try {
 } catch (error) {
   console.error('Database connection error:', error);
   // Continue with defaults if DB fails
+}
+
+// Use fallback if gallery is empty
+if (galleryItems.length === 0) {
+  galleryItems = defaultGalleryItems;
 }
 
 // Default settings if none exist
