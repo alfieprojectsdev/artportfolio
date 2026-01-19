@@ -1,0 +1,370 @@
+---
+import { db, portfolioItems, siteSettings } from '../db';
+import { desc, eq } from 'drizzle-orm';
+
+// Fetch data from database (SSR - runs on every request)
+let galleryItems: typeof portfolioItems.$inferSelect[] = [];
+let settings: typeof siteSettings.$inferSelect | null = null;
+
+try {
+  galleryItems = await db
+    .select()
+    .from(portfolioItems)
+    .where(eq(portfolioItems.featured, true))
+    .orderBy(desc(portfolioItems.displayOrder), desc(portfolioItems.createdAt));
+
+  const [dbSettings] = await db.select().from(siteSettings).limit(1);
+  settings = dbSettings || null;
+} catch (error) {
+  console.error('Database connection error:', error);
+  // Continue with defaults if DB fails
+}
+
+// Default settings if none exist
+const config = settings || {
+  commissionStatus: 'open',
+  artistName: 'Bred',
+  bio: "Hello, I'm Bred! I'm a senior student doing commissions and art on the side. If you like my style, I'd love to work with you! :D",
+  instagram: 'demented.toast',
+  discord: 'toasted_insanity',
+  bustSketch: 80, bustFlat: 150, bustRendered: 200,
+  halfSketch: 100, halfFlat: 200, halfRendered: 300,
+  fullSketch: 200, fullFlat: 250, fullRendered: 500,
+  chibiSketch: 40, chibiFlat: 100, chibiRendered: 150,
+};
+
+// Helper to convert PHP to USD (approximate)
+const toUsd = (php: number) => Math.round(php / 56);
+
+// Get unique categories from gallery items
+const categories = galleryItems.length > 0
+  ? ['all', ...new Set(galleryItems.map(item => item.category))]
+  : ['all'];
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{config.artistName}'s Commissions</title>
+  <meta name="description" content={`Digital art commissions by ${config.artistName}. ${config.bio?.slice(0, 100)}...`}>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=Inter:wght@400;500&family=Kosugi&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #FFFFFF;
+      --card-bg: #FFFFFF;
+      --text-main: #000000;
+      --text-secondary: #916A5D;
+      --accent: #916A5D;
+      --accent-light: #7A5A4F;
+      --divider: #A18278;
+      --btn-bg: rgba(242,227,203,0.678);
+      --btn-hover: rgba(242,227,203,0.9);
+      --font-serif: 'Fraunces', Georgia, serif;
+      --font-mono: 'Kosugi', monospace;
+      --font-sans: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-serif);
+      font-weight: 300;
+      line-height: 1.6;
+      padding-bottom: 50px;
+      font-size: 18px;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+      background-image:
+        url("data:image/svg+xml;charset=utf8,%3Csvg%20viewBox%3D%220%200%20512%20512%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22noise%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.875%22%20result%3D%22noise%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220.99609375%200%200%200%200%200%200.8515625%200%200%200%200%200%200.63671875%200%200%200%200%200%200.109375%200%22%2F%3E%3C%2Ffilter%3E%3Crect%20filter%3D%22url%28%23noise%29%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22512%22%20height%3D%22512%22%20fill%3D%22transparent%22%20opacity%3D%221%22%2F%3E%3C%2Fsvg%3E"),
+        linear-gradient(to top, rgba(112,63,63,0.753), rgba(112,63,63,0.753)),
+        url('/assets/bg.png');
+      background-size: 512px, auto, cover;
+      background-position: center, 0% 0%, center;
+      background-repeat: repeat, repeat, no-repeat;
+    }
+
+    img { max-width: 100%; display: block; border-radius: 0.375rem; }
+    .container { width: 90%; max-width: 1000px; margin: 0 auto; }
+    main.container { background: rgba(255,255,255,0.92); padding: 40px; border-radius: 0.375rem; margin-bottom: 20px; }
+    .hero { text-align: center; padding: 60px 20px; background: rgba(255,255,255,0.92); margin-bottom: 20px; }
+    .profile-pic { width: 5.5rem; height: 5.5rem; object-fit: cover; border-radius: 50%; border: 3px solid var(--accent); margin: 0 auto 20px; }
+    .hero h1 { font-family: var(--font-serif); font-size: 2.5rem; font-weight: 600; margin-bottom: 10px; color: var(--accent); }
+    .intro { color: var(--text-secondary); font-weight: 400; }
+    .status-badge { display: inline-block; background: var(--btn-bg); color: var(--text-main); padding: 8px 20px; border-radius: 50px; font-family: var(--font-sans); font-weight: 500; margin-top: 15px; font-size: 0.9rem; }
+    .status-badge.closed { background: #fee2e2; color: #991b1b; }
+    .status-badge.waitlist { background: #fef3c7; color: #92400e; }
+
+    .filter-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+    .filter-btn { background: var(--btn-bg); border: none; color: var(--text-main); padding: 8px 16px; border-radius: 50px; cursor: pointer; font-family: var(--font-sans); font-size: 0.9rem; transition: all 0.2s ease; }
+    .filter-btn:hover, .filter-btn.active { background: var(--accent); color: white; transform: scale(1.05); }
+
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 60px; }
+    .gallery-item { overflow: hidden; border-radius: 0.375rem; }
+    .gallery-item img { width: 100%; height: 300px; object-fit: cover; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
+    .gallery-item img:hover { transform: scale(1.02); box-shadow: 0 4px 15px rgba(145,106,93,0.3); }
+    .gallery-item.hidden { display: none; }
+    .empty-gallery { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+
+    .pricing-section { margin-bottom: 60px; text-align: center; }
+    .pricing-section h2, .tos-section h2, .dos-donts h3 { font-family: var(--font-serif); font-weight: 600; margin-bottom: 30px; color: var(--accent); border-bottom: 2px solid var(--divider); display: inline-block; padding-bottom: 5px; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+    .price-card { background: var(--card-bg); padding: 20px; border-radius: 0.375rem; border: 1px solid var(--divider); }
+    .price-card h3 { font-family: var(--font-mono); color: var(--text-secondary); font-size: 1rem; margin-bottom: 10px; }
+    .price-card ul { list-style: none; text-align: left; font-family: var(--font-sans); font-size: 0.9rem; }
+    .price-card li { padding: 8px 0; border-bottom: 1px solid var(--divider); color: var(--text-secondary); }
+    .price-card li strong { color: var(--text-main); }
+    .payment-note { margin-top: 30px; font-size: 0.9rem; color: var(--text-secondary); }
+
+    .tos-section { text-align: center; margin-bottom: 60px; }
+    .tos-list { list-style: none; max-width: 600px; margin: 0 auto; text-align: left; }
+    .tos-list li { margin-bottom: 10px; padding-left: 10px; color: var(--text-secondary); }
+
+    .dos-donts { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-bottom: 60px; }
+    .col { flex: 1; min-width: 250px; background: var(--card-bg); padding: 20px; border-radius: 0.375rem; border: 1px solid var(--divider); }
+    .col ul { list-style: none; padding-left: 20px; color: var(--text-secondary); }
+    .do h3 { color: #4A7A4A; font-family: var(--font-mono); }
+    .dont h3 { color: #A85454; font-family: var(--font-mono); }
+
+    footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--divider); background: rgba(255,255,255,0.92); }
+    footer h3 { font-family: var(--font-serif); color: var(--accent); margin-bottom: 20px; }
+    .social-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .btn { display: inline-block; background: var(--btn-bg); border: none; color: var(--text-main); padding: 12px 24px; margin: 5px; text-decoration: none; border-radius: 50px; cursor: pointer; font-family: var(--font-sans); font-weight: 500; transition: transform 0.2s ease, background 0.3s ease; position: relative; }
+    .btn:hover { background: var(--btn-hover); transform: scale(1.0775); }
+    .credit { margin-top: 20px; font-size: 0.8rem; color: var(--accent-light); }
+    .privacy-note { margin-top: 10px; font-size: 0.75rem; color: var(--text-secondary); }
+    .privacy-note a { color: var(--accent); text-decoration: none; }
+    .privacy-note a:hover { text-decoration: underline; }
+
+    .lightbox { display: none; position: fixed; z-index: 1000; padding-top: 50px; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(112,63,63,0.9); }
+    .lightbox.open { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .lightbox-content { margin: auto; display: block; width: 80%; max-width: 1200px; max-height: 80vh; object-fit: contain; border-radius: 0.375rem; }
+    .lightbox-nav { display: flex; align-items: center; gap: 20px; margin-top: 20px; color: white; }
+    .lightbox-nav button { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; padding: 10px 20px; cursor: pointer; border-radius: 8px; }
+    .lightbox-nav button:hover { background: rgba(255,255,255,0.3); }
+    .close { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
+
+    @media (max-width: 768px) {
+      main.container { padding: 20px; }
+      .hero h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <img src="/assets/profile.png" alt={`${config.artistName} Avatar`} class="profile-pic">
+      <h1>{config.artistName}'s Commissions</h1>
+      <p class="intro">{config.bio}</p>
+      <div class:list={['status-badge', config.commissionStatus]}>
+        Status: {config.commissionStatus?.toUpperCase()}
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    {galleryItems.length > 0 ? (
+      <>
+        <div class="filter-buttons">
+          {categories.map(cat => (
+            <button class:list={['filter-btn', { active: cat === 'all' }]} data-filter={cat}>
+              {cat === 'all' ? 'All Work' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        <section id="gallery" class="gallery-grid">
+          {galleryItems.map((item, index) => (
+            <div class="gallery-item" data-category={item.category}>
+              <img src={item.thumbnailUrl || item.imageUrl} data-full={item.imageUrl} alt={item.altText || item.title} loading="lazy" data-index={index} />
+            </div>
+          ))}
+        </section>
+      </>
+    ) : (
+      <div class="empty-gallery">
+        <p>Gallery coming soon! Check back later for artwork.</p>
+      </div>
+    )}
+
+    <section id="pricing" class="pricing-section">
+      <h2>Commission Rates</h2>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <h3>Bust / Headshot</h3>
+          <ul>
+            <li><strong>Sketch:</strong> ₱{config.bustSketch} | ${toUsd(config.bustSketch!)}</li>
+            <li><strong>Flat:</strong> ₱{config.bustFlat} | ${toUsd(config.bustFlat!)}</li>
+            <li><strong>Rendered:</strong> ₱{config.bustRendered} | ${toUsd(config.bustRendered!)}</li>
+          </ul>
+        </div>
+        <div class="price-card">
+          <h3>Half Body</h3>
+          <ul>
+            <li><strong>Sketch:</strong> ₱{config.halfSketch} | ${toUsd(config.halfSketch!)}</li>
+            <li><strong>Flat:</strong> ₱{config.halfFlat} | ${toUsd(config.halfFlat!)}</li>
+            <li><strong>Rendered:</strong> ₱{config.halfRendered} | ${toUsd(config.halfRendered!)}</li>
+          </ul>
+        </div>
+        <div class="price-card">
+          <h3>Full Body</h3>
+          <ul>
+            <li><strong>Sketch:</strong> ₱{config.fullSketch} | ${toUsd(config.fullSketch!)}</li>
+            <li><strong>Flat:</strong> ₱{config.fullFlat} | ${toUsd(config.fullFlat!)}</li>
+            <li><strong>Rendered:</strong> ₱{config.fullRendered} | ${toUsd(config.fullRendered!)}</li>
+          </ul>
+        </div>
+        <div class="price-card">
+          <h3>Chibi Style</h3>
+          <ul>
+            <li><strong>Sketch:</strong> ₱{config.chibiSketch} | ${toUsd(config.chibiSketch!)}</li>
+            <li><strong>Flat:</strong> ₱{config.chibiFlat} | ${toUsd(config.chibiFlat!)}</li>
+            <li><strong>Rendered:</strong> ₱{config.chibiRendered} | ${toUsd(config.chibiRendered!)}</li>
+          </ul>
+        </div>
+      </div>
+      <p class="payment-note">
+        <strong>Payment:</strong> GCash / Paypal / Robux<br>
+        <small>(For Robux payment, ask me thru DMs)</small>
+      </p>
+    </section>
+
+    <section id="tos" class="tos-section">
+      <h2>Terms of Service</h2>
+      <ul class="tos-list">
+        <li>☼ 100% Payment Upfront</li>
+        <li>☼ First come, first serve</li>
+        <li>☼ Please provide at least 3 references</li>
+        <li>☼ Personal use only (credit appreciated)</li>
+        <li>☼ Turnaround time: 3-7 days (depending on school load)</li>
+      </ul>
+    </section>
+
+    <section class="dos-donts">
+      <div class="col do">
+        <h3>✔ DOs</h3>
+        <ul>
+          <li>Original Characters</li>
+          <li>Fanart</li>
+          <li>Ship Art</li>
+          <li>Human / Humanoid</li>
+          <li>Partial Gore / Body Horror</li>
+        </ul>
+      </div>
+      <div class="col dont">
+        <h3>✖ DON'Ts</h3>
+        <ul>
+          <li>Mecha</li>
+          <li>Furry (Ask first)</li>
+          <li>NSFW</li>
+          <li>Political / Derogatory</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <h3>Contact Me</h3>
+      <div class="social-links">
+        <a href={`https://instagram.com/${config.instagram}`} target="_blank" class="btn">Instagram: @{config.instagram}</a>
+        <button id="discordBtn" class="btn" data-user={config.discord}>Discord: {config.discord}</button>
+      </div>
+      <p class="credit">Built by Finch</p>
+      <p class="privacy-note">
+        This site uses <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a> for privacy-friendly analytics (no cookies).
+      </p>
+    </div>
+  </footer>
+
+  <div id="lightbox" class="lightbox">
+    <span class="close">&times;</span>
+    <img class="lightbox-content" id="lightbox-img" alt="">
+    <div class="lightbox-nav">
+      <button id="prev-btn">&#10094;</button>
+      <span id="img-counter">1 / {galleryItems.length || 1}</span>
+      <button id="next-btn">&#10095;</button>
+    </div>
+  </div>
+
+  <script is:inline>
+    // Gallery filtering
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const filter = btn.dataset.filter;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.gallery-item').forEach(item => {
+          item.classList.toggle('hidden', filter !== 'all' && item.dataset.category !== filter);
+        });
+      });
+    });
+
+    // Lightbox
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const imgCounter = document.getElementById('img-counter');
+    const images = Array.from(document.querySelectorAll('.gallery-item img'));
+    let currentIndex = 0;
+
+    function updateLightbox() {
+      if (images.length === 0) return;
+      const img = images[currentIndex];
+      lightboxImg.src = img.dataset.full || img.src;
+      imgCounter.textContent = `${currentIndex + 1} / ${images.length}`;
+    }
+
+    images.forEach((img, index) => {
+      img.addEventListener('click', () => {
+        currentIndex = index;
+        updateLightbox();
+        lightbox.classList.add('open');
+      });
+    });
+
+    document.querySelector('.close')?.addEventListener('click', () => lightbox.classList.remove('open'));
+    lightbox?.addEventListener('click', (e) => { if (e.target === lightbox) lightbox.classList.remove('open'); });
+    document.getElementById('prev-btn')?.addEventListener('click', () => { currentIndex = (currentIndex - 1 + images.length) % images.length; updateLightbox(); });
+    document.getElementById('next-btn')?.addEventListener('click', () => { currentIndex = (currentIndex + 1) % images.length; updateLightbox(); });
+
+    document.addEventListener('keydown', (e) => {
+      if (!lightbox?.classList.contains('open')) return;
+      if (e.key === 'Escape') lightbox.classList.remove('open');
+      if (e.key === 'ArrowLeft') { currentIndex = (currentIndex - 1 + images.length) % images.length; updateLightbox(); }
+      if (e.key === 'ArrowRight') { currentIndex = (currentIndex + 1) % images.length; updateLightbox(); }
+    });
+
+    // Discord copy
+    document.getElementById('discordBtn')?.addEventListener('click', function() {
+      const user = this.dataset.user;
+      navigator.clipboard.writeText(user).then(() => {
+        const original = this.textContent;
+        this.textContent = 'Copied!';
+        setTimeout(() => { this.textContent = `Discord: ${user}`; }, 2000);
+      });
+    });
+  </script>
+
+  <script data-goatcounter="https://ithinkandicode.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

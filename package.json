@@ -1,8 +1,26 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
-  "private": true,
+  "name": "astro-cms",
+  "type": "module",
+  "version": "0.0.1",
   "scripts": {
-    "build": "echo 'no build script'"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/react": "^4.4.2",
+    "@astrojs/vercel": "^9.0.4",
+    "@neondatabase/serverless": "^1.0.2",
+    "astro": "^5.16.11",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "drizzle-kit": "^0.31.8"
   }
 }
