@@ -1,61 +1,397 @@
 :root {
+    /* =========================================
+       CSS VARIABLES (THEME CONFIGURATION)
+       Change these hex codes to update your color scheme instantly.
+       ========================================= */
     --bg-color: #FFFFFF;
     --card-bg: #FFFFFF;
     --text-main: #000000;
     --text-secondary: #916A5D;
-    --accent: #916A5D;
-    --accent-light: #7A5A4F;
-    --divider: #A18278;
+    --accent: #916A5D;       /* Primary accent color */
+    --accent-light: #7A5A4F; /* Darker shade for text/contrast */
+    --divider: #A18278;      /* Lines and borders */
+
+    /* Button Colors */
     --btn-bg: rgba(242,227,203,0.678);
     --btn-hover: rgba(242,227,203,0.9);
+
+    /* Fonts loaded from Google Fonts in index.html */
     --font-serif: 'Fraunces', Georgia, serif;
     --font-mono: 'Kosugi', monospace;
     --font-sans: 'Inter', sans-serif;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background-color: var(--bg-color); color: var(--text-main); font-family: var(--font-serif); font-weight: 300; line-height: 1.6; padding-bottom: 50px; font-size: 18px; position: relative; min-height: 100vh; }
-body::before { content: ''; display: block; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; background-image: url("data:image/svg+xml;charset=utf8,%3Csvg%20viewBox%3D%220%200%20512%20512%22%20width%3D%22512%22%20height%3D%22512%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22noise%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.875%22%20result%3D%22noise%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220.99609375%200%200%200%200%200%200.8515625%200%200%200%200%200%200.63671875%200%200%200%200%200%200.109375%200%22%2F%3E%3C%2Ffilter%3E%3Crect%20filter%3D%22url%28%23noise%29%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22512%22%20height%3D%22512%22%20fill%3D%22transparent%22%20opacity%3D%221%22%2F%3E%3C%2Fsvg%3E"), linear-gradient(to top, rgba(112,63,63,0.753), rgba(112,63,63,0.753)), url('assets/bg.png'); background-size: 512px, auto, cover; background-position: center, 0% 0%, center; background-repeat: repeat, repeat, no-repeat; }
-img { max-width: 100%; display: block; border-radius: 0.375rem; }
-.container { width: 90%; max-width: 1000px; margin: 0 auto; }
-main.container { background: rgba(255,255,255,0.92); padding: 40px; border-radius: 0.375rem; margin-bottom: 20px; }
-.hero { text-align: center; padding: 60px 20px; background: rgba(255,255,255,0.92); margin-bottom: 20px; }
-.profile-pic { width: 5.5rem; height: 5.5rem; object-fit: cover; border-radius: 50%; border: 3px solid var(--accent); margin: 0 auto 20px; }
-.hero h1 { font-family: var(--font-serif); font-size: 2.5rem; font-weight: 600; margin-bottom: 10px; color: var(--accent); }
-.intro { color: var(--text-secondary); font-weight: 400; }
-.status-badge { display: inline-block; background: var(--btn-bg); color: var(--text-main); padding: 8px 20px; border-radius: 50px; font-family: var(--font-sans); font-weight: 500; margin-top: 15px; font-size: 0.9rem; transition: transform 0.2s ease; }
-.status-badge:hover { transform: scale(1.0775); }
-.gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 60px; }
-.gallery-item img { width: 100%; height: 300px; object-fit: cover; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
-.gallery-item img:hover { transform: scale(1.02); box-shadow: 0 4px 15px rgba(145,106,93,0.3); }
-.pricing-section { margin-bottom: 60px; text-align: center; }
-.pricing-section h2, .tos-section h2, .dos-donts h3 { font-family: var(--font-serif); font-weight: 600; margin-bottom: 30px; color: var(--accent); border-bottom: 2px solid var(--divider); display: inline-block; padding-bottom: 5px; }
-.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-.price-card { background: var(--card-bg); padding: 20px; border-radius: 0.375rem; border: 1px solid var(--divider); }
-.price-card h3 { font-family: var(--font-mono); color: var(--text-secondary); font-size: 1rem; margin-bottom: 10px; }
-.price-img { width: 100%; height: 150px; object-fit: cover; margin: 15px 0; border-radius: 0.375rem; }
-.price-card ul { list-style: none; text-align: left; font-family: var(--font-sans); font-size: 0.9rem; }
-.price-card li { padding: 8px 0; border-bottom: 1px solid var(--divider); color: var(--text-secondary); }
-.price-card li strong { color: var(--text-main); }
-.price-placeholder { height: 20px; }
-.payment-note { margin-top: 30px; font-size: 0.9rem; color: var(--text-secondary); }
-.tos-section { text-align: center; margin-bottom: 60px; }
-.tos-list { list-style: none; max-width: 600px; margin: 0 auto; text-align: left; }
-.tos-list li { margin-bottom: 10px; padding-left: 10px; color: var(--text-secondary); }
-.dos-donts { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-bottom: 60px; }
-.col { flex: 1; min-width: 250px; background: var(--card-bg); padding: 20px; border-radius: 0.375rem; border: 1px solid var(--divider); }
-.col ul { list-style: none; padding-left: 20px; color: var(--text-secondary); }
+
+/* Global Reset: Ensures all elements behave predictably */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: var(--font-serif);
+    font-weight: 300;
+    line-height: 1.6;
+    padding-bottom: 50px;
+    font-size: 18px;
+    position: relative;
+    min-height: 100vh;
+}
+
+/*
+   BACKGROUND NOISE TEXTURE
+   This pseudo-element creates the grainy paper effect.
+   It overlays an SVG noise filter + a gradient on top of the background image.
+*/
+body::before {
+    content: '';
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none; /* Allows clicks to pass through to the site */
+    background-image:
+        url("data:image/svg+xml;charset=utf8,%3Csvg%20viewBox%3D%220%200%20512%20512%22%20width%3D%22512%22%20height%3D%22512%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22noise%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.875%22%20result%3D%22noise%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220.99609375%200%200%200%200%200%200.8515625%200%200%200%200%200%200.63671875%200%200%200%200%200%200.109375%200%22%2F%3E%3C%2Ffilter%3E%3Crect%20filter%3D%22url%28%23noise%29%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22512%22%20height%3D%22512%22%20fill%3D%22transparent%22%20opacity%3D%221%22%2F%3E%3C%2Fsvg%3E"),
+        linear-gradient(to top, rgba(112,63,63,0.753), rgba(112,63,63,0.753)),
+        url('assets/bg.png');
+    background-size: 512px, auto, cover;
+    background-position: center, 0% 0%, center;
+    background-repeat: repeat, repeat, no-repeat;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+    border-radius: 0.375rem;
+}
+
+/* Layout Containers */
+.container {
+    width: 90%;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+main.container {
+    background: rgba(255,255,255,0.92);
+    padding: 40px;
+    border-radius: 0.375rem;
+    margin-bottom: 20px;
+}
+
+/* Hero Section (Top Header) */
+.hero {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(255,255,255,0.92);
+    margin-bottom: 20px;
+}
+
+.profile-pic {
+    width: 5.5rem;
+    height: 5.5rem;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    margin: 0 auto 20px;
+}
+
+.hero h1 {
+    font-family: var(--font-serif);
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--accent);
+}
+
+.intro {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+/* Status Badge (Open/Closed) */
+.status-badge {
+    display: inline-block;
+    background: var(--btn-bg);
+    color: var(--text-main);
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    margin-top: 15px;
+    font-size: 0.9rem;
+    transition: transform 0.2s ease;
+}
+
+.status-badge:hover {
+    transform: scale(1.0775);
+}
+
+/*
+   GALLERY GRID
+   Uses CSS Grid to automatically create responsive columns.
+   minmax(250px, 1fr) means columns are at least 250px wide, but grow to fill space.
+*/
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 60px;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover; /* Ensures images fill the box without stretching */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.gallery-item img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(145,106,93,0.3);
+}
+
+/* Section Headers */
+.pricing-section {
+    margin-bottom: 60px;
+    text-align: center;
+}
+
+.pricing-section h2,
+.tos-section h2,
+.dos-donts h3 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    margin-bottom: 30px;
+    color: var(--accent);
+    border-bottom: 2px solid var(--divider);
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+/* Pricing Grid */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.price-card {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 0.375rem;
+    border: 1px solid var(--divider);
+}
+
+.price-card h3 {
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.price-img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    margin: 15px 0;
+    border-radius: 0.375rem;
+}
+
+.price-card ul {
+    list-style: none;
+    text-align: left;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+}
+
+.price-card li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--divider);
+    color: var(--text-secondary);
+}
+
+.price-card li strong {
+    color: var(--text-main);
+}
+
+.price-placeholder {
+    height: 20px;
+}
+
+.payment-note {
+    margin-top: 30px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Terms of Service Section */
+.tos-section {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.tos-list {
+    list-style: none;
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.tos-list li {
+    margin-bottom: 10px;
+    padding-left: 10px;
+    color: var(--text-secondary);
+}
+
+/* Do's and Don'ts - Flexbox Layout */
+.dos-donts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 60px;
+}
+
+.col {
+    flex: 1;
+    min-width: 250px;
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 0.375rem;
+    border: 1px solid var(--divider);
+}
+
+.col ul {
+    list-style: none;
+    padding-left: 20px;
+    color: var(--text-secondary);
+}
+
 .do h3 { color: #4A7A4A; font-family: var(--font-mono); }
 .dont h3 { color: #A85454; font-family: var(--font-mono); }
-footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--divider); background: rgba(255,255,255,0.92); }
-footer h3 { font-family: var(--font-serif); color: var(--accent); margin-bottom: 20px; }
-.social-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.btn { display: inline-block; background: var(--btn-bg); border: none; color: var(--text-main); padding: 12px 24px; margin: 5px; text-decoration: none; border-radius: 50px; cursor: pointer; font-family: var(--font-sans); font-weight: 500; transition: transform 0.2s ease, background 0.3s ease; position: relative; }
-.btn:hover { background: var(--btn-hover); transform: scale(1.0775); }
-.tooltip { visibility: hidden; background-color: var(--accent); color: #fff; text-align: center; border-radius: 50px; padding: 5px 10px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -50px; opacity: 0; transition: opacity 0.3s; font-size: 0.8rem; }
-.credit { margin-top: 20px; font-size: 0.8rem; color: var(--accent-light); }
-.privacy-note { margin-top: 10px; font-size: 0.75rem; color: var(--text-secondary); }
-.privacy-note a { color: var(--accent); text-decoration: none; }
-.privacy-note a:hover { text-decoration: underline; }
-.lightbox { display: none; position: fixed; z-index: 1000; padding-top: 50px; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(112,63,63,0.9); }
-.lightbox-content { margin: auto; display: block; width: 80%; max-width: 1200px; max-height: 80vh; object-fit: contain; border-radius: 0.375rem; }
-.close { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 40px 20px;
+    border-top: 1px solid var(--divider);
+    background: rgba(255,255,255,0.92);
+}
+
+footer h3 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    margin-bottom: 20px;
+}
+
+.social-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Interactive Buttons */
+.btn {
+    display: inline-block;
+    background: var(--btn-bg);
+    border: none;
+    color: var(--text-main);
+    padding: 12px 24px;
+    margin: 5px;
+    text-decoration: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    transition: transform 0.2s ease, background 0.3s ease;
+    position: relative;
+}
+
+.btn:hover {
+    background: var(--btn-hover);
+    transform: scale(1.0775);
+}
+
+/* Tooltip (for "Copied!" message) */
+.tooltip {
+    visibility: hidden;
+    background-color: var(--accent);
+    color: #fff;
+    text-align: center;
+    border-radius: 50px;
+    padding: 5px 10px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -50px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.8rem;
+}
+
+.credit {
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: var(--accent-light);
+}
+
+.privacy-note {
+    margin-top: 10px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.privacy-note a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.privacy-note a:hover {
+    text-decoration: underline;
+}
+
+/*
+   LIGHTBOX
+   The overlay that covers the screen when an image is clicked.
+*/
+.lightbox {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000;
+    padding-top: 50px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(112,63,63,0.9); /* Dark semi-transparent background */
+}
+
+.lightbox-content {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 1200px;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 0.375rem;
+}
+
+.close {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+}
