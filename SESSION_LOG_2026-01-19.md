@@ -71,7 +71,13 @@ export function checkAuth(request: Request): boolean {
     return false;
   }
 }
+```
 
+**Admin Credentials:**
+- Username: `admin` (hardcoded, case-sensitive)
+- Password: Value of `ADMIN_PASSWORD` environment variable
+
+```typescript
 export function unauthorizedResponse(): Response {
   return new Response('Unauthorized', {
     status: 401,

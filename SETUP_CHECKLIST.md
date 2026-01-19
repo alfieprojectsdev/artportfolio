@@ -33,10 +33,11 @@ Follow these steps to get the art portfolio CMS running locally and deployed.
 - [ ] Click **Save**
 - [ ] Save preset name as `CLOUDINARY_UPLOAD_PRESET`
 
-### 1.3 Admin Password
+### 1.3 Admin Credentials
 
 - [ ] Choose a secure password for admin access
 - [ ] Save as `ADMIN_PASSWORD`
+- **Note:** Username is hardcoded as `admin`
 
 ---
 
@@ -103,7 +104,7 @@ npm run dev
 
 - [ ] Visit `http://localhost:4321/admin`
 - [ ] Browser prompts for username/password
-- [ ] Enter any username + your `ADMIN_PASSWORD`
+- [ ] Enter username: `admin`, password: your `ADMIN_PASSWORD`
 - [ ] Admin dashboard loads with 3 tabs
 
 ### 3.4 Test Image Upload
@@ -177,8 +178,8 @@ In Vercel project settings → Environment Variables:
 
 ### "Admin login fails"
 
-- Password is case-sensitive
-- Username can be anything (only password is checked)
+- Username must be exactly `admin` (case-sensitive)
+- Password must match your `ADMIN_PASSWORD` env var (case-sensitive)
 - Clear browser cache and try again
 
 ### "Images don't appear on public site"
