@@ -1,3 +1,7 @@
+'use client';
+
+import React from "react"
+
 import { useState, useEffect } from 'react';
 import CloudinaryUploadWidget, { type CloudinaryUploadResult } from './CloudinaryUploadWidget';
 import type { PortfolioItem, CommissionRequest, SiteSettings } from '../../db/schema';
@@ -159,7 +163,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
               <label>Image</label>
               {newItem.imageUrl ? (
                 <div className="preview-image">
-                  <img src={newItem.imageUrl.replace('/upload/', '/upload/w_400,q_auto,f_auto/')} alt="Preview" />
+                  <img src={`${newItem.imageUrl}?w=400&q=auto&f=auto`} alt="Preview" />
                   <button type="button" onClick={() => setNewItem(prev => ({ ...prev, imageUrl: '' }))}>
                     Remove
                   </button>
@@ -215,7 +219,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
             <h3>Current Gallery Items</h3>
             {galleryItems.map(item => (
               <div key={item.id} className="gallery-list-item">
-                <img src={item.imageUrl.replace('/upload/', '/upload/w_100,h_100,c_fill/')} alt={item.altText || item.title} />
+                <img src={`${item.imageUrl}?w=100&h=100&fit=crop`} alt={item.altText || item.title} />
                 <div className="item-info">
                   <strong>{item.title}</strong>
                   <span className="category">{item.category}</span>
