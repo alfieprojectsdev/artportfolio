@@ -32,7 +32,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const body = await request.json();
-    const { title, imageUrl, category, altText } = body;
+    const { title, imageUrl, flatUrl, category, altText } = body;
 
     if (!title || !imageUrl || !category) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -49,6 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
       .values({
         title,
         imageUrl,
+        flatUrl: flatUrl || null,  // Optional: for before/after comparison slider
         thumbnailUrl,
         category,
         altText: altText || title,
