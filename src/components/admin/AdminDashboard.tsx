@@ -168,6 +168,8 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                 </div>
               ) : (
                 <CloudinaryUploadWidget
+                  key="rendered-upload"
+                  id="rendered-upload"
                   cloudName={cloudName}
                   uploadPreset={uploadPreset}
                   onUpload={(result) => handleImageUpload(result, 'rendered')}
@@ -187,6 +189,8 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                 </div>
               ) : (
                 <CloudinaryUploadWidget
+                  key="flat-upload"
+                  id="flat-upload"
                   cloudName={cloudName}
                   uploadPreset={uploadPreset}
                   onUpload={(result) => handleImageUpload(result, 'flat')}

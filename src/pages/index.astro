@@ -21,8 +21,8 @@ try {
   // Continue with defaults if DB fails
 }
 
-// Default settings if none exist
-const config = settings || {
+// Default settings - merge with database settings, falling back to defaults for null/empty values
+const defaults = {
   commissionStatus: 'open',
   artistName: 'Bred',
   bio: "Hello, I'm Bred! I'm a senior student doing commissions and art on the side. If you like my style, I'd love to work with you! :D",
@@ -32,6 +32,14 @@ const config = settings || {
   halfSketch: 100, halfFlat: 200, halfRendered: 300,
   fullSketch: 200, fullFlat: 250, fullRendered: 500,
   chibiSketch: 40, chibiFlat: 100, chibiRendered: 150,
+};
+
+const config = {
+  ...defaults,
+  ...settings,
+  // Ensure critical display fields have fallbacks even if DB has null
+  artistName: settings?.artistName || defaults.artistName,
+  commissionStatus: settings?.commissionStatus || defaults.commissionStatus,
 };
 
 // Helper to convert PHP to USD (approximate)
