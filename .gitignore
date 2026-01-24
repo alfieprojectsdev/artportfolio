@@ -1,32 +1,8 @@
-# build output
-dist/
-.vercel/
-# generated types
-.astro/
-
-# dependencies
-node_modules/
-
-# logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-
-# environment variables
-.env
-.env.production
-
-# macOS-specific files
-.DS_Store
-
-# jetbrains setting folder
-.idea/
-
-# playwright
-/playwright-report/
-/playwright/.cache/
-/test-results/
-screenshots/
-v0_reco/
+carrd/
+scaffold_portfolio.sh
+pro_git.sh
+resend_API.md
+API_keys.md
+worktrees/
+.vercel
+.env*.local
