@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { db, portfolioItems } from '../../../db';
 import { desc } from 'drizzle-orm';
+import { checkAuth, unauthorizedResponse } from '../../../lib/auth';
 
 // GET /api/gallery - List all gallery items
 export const GET: APIRoute = async () => {
@@ -25,9 +26,13 @@ export const GET: APIRoute = async () => {
 
 // POST /api/gallery - Add new gallery item
 export const POST: APIRoute = async ({ request }) => {
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
   try {
     const body = await request.json();
-    const { title, imageUrl, category, altText } = body;
+    const { title, imageUrl, flatUrl, category, altText } = body;
 
     if (!title || !imageUrl || !category) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -44,6 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
       .values({
         title,
         imageUrl,
+        flatUrl: flatUrl || null,  // Optional: for before/after comparison slider
         thumbnailUrl,
         category,
         altText: altText || title,

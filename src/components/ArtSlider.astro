@@ -1,0 +1,128 @@
+---
+/**
+ * ArtSlider.astro
+ * A performant, accessible before/after slider for digital art portfolios.
+ *
+ * @param {string} before - URL for the "Flat" art (Cloudinary f_auto, q_auto recommended)
+ * @param {string} after - URL for the "Rendered" art
+ * @param {string} alt - Accessibility text for the artwork
+ */
+interface Props {
+  before: string;
+  after: string;
+  alt?: string;
+}
+
+const { before, after, alt = "Artwork comparison" } = Astro.props;
+---
+
+<div class="comparison-container" style="--exposure: 50%;">
+  <img src={before} alt={`${alt} - Flat version`} loading="lazy" />
+
+  <div class="rendered-layer">
+    <img src={after} alt={`${alt} - Rendered version`} loading="lazy" />
+  </div>
+
+  <input
+    type="range"
+    min="0"
+    max="100"
+    value="50"
+    class="slider-input"
+    aria-label="Slide to compare flat and rendered art"
+  />
+
+  <div class="slider-handle" aria-hidden="true"></div>
+</div>
+
+<script>
+  /**
+   * Delegated event listener scoped to comparison containers.
+   * Updates the CSS Variable --exposure, which drives the clip-path.
+   */
+  const containers = document.querySelectorAll('.comparison-container');
+
+  containers.forEach(container => {
+    const slider = container.querySelector('.slider-input') as HTMLInputElement;
+
+    slider?.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement;
+      (container as HTMLElement).style.setProperty('--exposure', `${target.value}%`);
+    });
+  });
+</script>
+
+<style>
+  .comparison-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: auto;
+    overflow: hidden;
+    cursor: ew-resize;
+    user-select: none;
+    border-radius: 8px;
+  }
+
+  /* Ensure images stack perfectly on top of each other */
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+  }
+
+  .rendered-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Clips the top image from the right.
+       0% exposure = fully hidden, 100% = fully visible. */
+    clip-path: inset(0 calc(100% - var(--exposure)) 0 0);
+  }
+
+  /* The Input Range (Invisible but functional) */
+  .slider-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: ew-resize;
+    z-index: 10;
+  }
+
+  /* The UI Handle Line */
+  .slider-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--exposure);
+    width: 2px;
+    background: white;
+    pointer-events: none;
+    z-index: 5;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  }
+
+  /* Circle icon on the handle center */
+  .slider-handle::after {
+    content: '\2194'; /* ↔ */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  }
+</style>

@@ -4,7 +4,8 @@ import { pgTable, serial, text, integer, timestamp, boolean } from 'drizzle-orm/
 export const portfolioItems = pgTable('portfolio_items', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
-  imageUrl: text('image_url').notNull(),       // Cloudinary URL
+  imageUrl: text('image_url').notNull(),       // Cloudinary URL (rendered/final version)
+  flatUrl: text('flat_url'),                    // Cloudinary URL (flat/sketch version for comparison slider)
   thumbnailUrl: text('thumbnail_url'),          // Optimized thumbnail URL
   category: text('category').notNull(),         // 'commission', 'fanart', 'original', 'wip'
   altText: text('alt_text'),                    // Accessibility

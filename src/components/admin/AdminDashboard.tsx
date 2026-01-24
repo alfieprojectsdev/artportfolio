@@ -20,7 +20,8 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
   // Form state for new gallery item
   const [newItem, setNewItem] = useState({
     title: '',
-    imageUrl: '',
+    imageUrl: '',      // Rendered/final version (required)
+    flatUrl: '',       // Flat/sketch version for comparison slider (optional)
     category: 'commission',
     altText: '',
   });
@@ -48,10 +49,10 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
     }
   };
 
-  const handleImageUpload = (result: CloudinaryUploadResult) => {
+  const handleImageUpload = (result: CloudinaryUploadResult, type: 'rendered' | 'flat') => {
     setNewItem(prev => ({
       ...prev,
-      imageUrl: result.secure_url,
+      [type === 'rendered' ? 'imageUrl' : 'flatUrl']: result.secure_url,
     }));
   };
 
@@ -66,7 +67,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
       if (res.ok) {
         const item = await res.json();
         setGalleryItems(prev => [item, ...prev]);
-        setNewItem({ title: '', imageUrl: '', category: 'commission', altText: '' });
+        setNewItem({ title: '', imageUrl: '', flatUrl: '', category: 'commission', altText: '' });
       }
     } catch (err) {
       setError('Failed to add item');
@@ -156,10 +157,11 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
             <h3>Add New Artwork</h3>
 
             <div className="form-group">
-              <label>Image</label>
+              <label>Rendered Image (Required)</label>
+              <p className="field-hint">The final/rendered version of the artwork</p>
               {newItem.imageUrl ? (
                 <div className="preview-image">
-                  <img src={newItem.imageUrl} alt="Preview" />
+                  <img src={newItem.imageUrl.replace('/upload/', '/upload/w_400,q_auto,f_auto/')} alt="Rendered preview" />
                   <button type="button" onClick={() => setNewItem(prev => ({ ...prev, imageUrl: '' }))}>
                     Remove
                   </button>
@@ -168,7 +170,26 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                 <CloudinaryUploadWidget
                   cloudName={cloudName}
                   uploadPreset={uploadPreset}
-                  onUpload={handleImageUpload}
+                  onUpload={(result) => handleImageUpload(result, 'rendered')}
+                />
+              )}
+            </div>
+
+            <div className="form-group">
+              <label>Flat Image (Optional)</label>
+              <p className="field-hint">The flat/sketch version for before/after comparison slider</p>
+              {newItem.flatUrl ? (
+                <div className="preview-image">
+                  <img src={newItem.flatUrl.replace('/upload/', '/upload/w_400,q_auto,f_auto/')} alt="Flat preview" />
+                  <button type="button" onClick={() => setNewItem(prev => ({ ...prev, flatUrl: '' }))}>
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <CloudinaryUploadWidget
+                  cloudName={cloudName}
+                  uploadPreset={uploadPreset}
+                  onUpload={(result) => handleImageUpload(result, 'flat')}
                 />
               )}
             </div>
@@ -215,10 +236,11 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
             <h3>Current Gallery Items</h3>
             {galleryItems.map(item => (
               <div key={item.id} className="gallery-list-item">
-                <img src={`${item.imageUrl}?w=100&h=100&fit=crop`} alt={item.altText || item.title} />
+                <img src={item.imageUrl.replace('/upload/', '/upload/w_100,h_100,c_fill/')} alt={item.altText || item.title} />
                 <div className="item-info">
                   <strong>{item.title}</strong>
                   <span className="category">{item.category}</span>
+                  {item.flatUrl && <span className="has-slider" title="Has before/after comparison">↔</span>}
                 </div>
                 <button
                   className="delete-btn"

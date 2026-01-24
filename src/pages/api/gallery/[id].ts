@@ -1,9 +1,14 @@
 import type { APIRoute } from 'astro';
 import { db, portfolioItems } from '../../../db';
 import { eq } from 'drizzle-orm';
+import { checkAuth, unauthorizedResponse } from '../../../lib/auth';
 
 // DELETE /api/gallery/:id - Delete a gallery item
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
   try {
     const id = parseInt(params.id!);
 
@@ -31,6 +36,10 @@ export const DELETE: APIRoute = async ({ params }) => {
 
 // PATCH /api/gallery/:id - Update a gallery item
 export const PATCH: APIRoute = async ({ params, request }) => {
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
   try {
     const id = parseInt(params.id!);
     const body = await request.json();
@@ -42,9 +51,19 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       });
     }
 
+    // Only allow updating specific fields (prevent mass assignment)
+    const allowedFields = ['title', 'imageUrl', 'thumbnailUrl', 'category', 'altText', 'featured', 'displayOrder'];
+    const updates: Record<string, unknown> = {};
+
+    for (const field of allowedFields) {
+      if (body[field] !== undefined) {
+        updates[field] = body[field];
+      }
+    }
+
     const [updated] = await db
       .update(portfolioItems)
-      .set(body)
+      .set(updates)
       .where(eq(portfolioItems.id, id))
       .returning();
 
