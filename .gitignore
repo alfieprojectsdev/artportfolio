@@ -29,3 +29,4 @@ pnpm-debug.log*
 /playwright/.cache/
 /test-results/
 screenshots/
+v0_reco/
