@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
 
 // Portfolio Items (The Gallery)
 export const portfolioItems = pgTable('portfolio_items', {
@@ -20,13 +20,14 @@ export const commissionRequests = pgTable('commission_requests', {
   clientName: text('client_name').notNull(),
   email: text('email').notNull(),
   discord: text('discord'),                     // Discord username
-  artType: text('art_type').notNull(),          // 'bust', 'half', 'full', 'chibi'
+  artType: text('art_type').notNull(),          // 'headshot', 'bust', 'half', 'full', 'chibi', 'custom'
   style: text('style'),                         // 'sketch', 'flat', 'rendered'
-  status: text('status').default('pending'),    // 'pending', 'accepted', 'in_progress', 'completed', 'rejected'
-  description: text('description'),
-  referenceLinks: text('reference_links'),      // JSON string or comma-separated URLs
+  status: text('status').default('pending'),    // 'pending', 'accepted', 'in_progress', 'completed', 'declined'
+  description: text('description').notNull(),   // The creative brief
+  refImages: jsonb('ref_images').$type<string[]>().default([]), // Array of Cloudinary URLs
   notes: text('notes'),                         // Artist's internal notes
   quotedPrice: integer('quoted_price'),         // Price in PHP
+  estimatedPrice: integer('estimated_price'),   // Auto-calculated based on type/style
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

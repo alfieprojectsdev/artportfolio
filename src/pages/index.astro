@@ -2,6 +2,7 @@
 import { db, portfolioItems, siteSettings } from '../db';
 import { desc, eq } from 'drizzle-orm';
 import ArtSlider from '../components/ArtSlider.astro';
+import CommissionForm from '../components/CommissionForm';
 
 // Fetch data from database (SSR - runs on every request)
 let galleryItems: typeof portfolioItems.$inferSelect[] = [];
@@ -63,6 +64,9 @@ const categories = galleryItems.length > 0
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=Inter:wght@400;500&family=Kosugi&display=swap" rel="stylesheet">
+
+  <!-- Cloudinary Upload Widget (for commission reference images) -->
+  <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
 
   <style>
     :root {
@@ -176,9 +180,43 @@ const categories = galleryItems.length > 0
     .lightbox-nav button:hover { background: rgba(255,255,255,0.3); }
     .close { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
 
+    /* Commission Request Form */
+    .commission-request-section { text-align: center; margin-bottom: 60px; }
+    .commission-request-section h2 { font-family: var(--font-serif); font-weight: 600; margin-bottom: 30px; color: var(--accent); border-bottom: 2px solid var(--divider); display: inline-block; padding-bottom: 5px; }
+    .commission-form { max-width: 600px; margin: 0 auto; text-align: left; background: var(--card-bg); padding: 30px; border-radius: 0.375rem; border: 1px solid var(--divider); }
+    .commission-form h3 { font-family: var(--font-serif); color: var(--accent); margin-bottom: 20px; text-align: center; }
+    .commission-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .commission-form .form-group { margin-bottom: 20px; }
+    .commission-form label { display: block; font-family: var(--font-sans); font-weight: 500; margin-bottom: 5px; color: var(--text-main); }
+    .commission-form input, .commission-form select, .commission-form textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--divider); border-radius: 6px; font-family: var(--font-sans); font-size: 0.95rem; background: white; }
+    .commission-form input:focus, .commission-form select:focus, .commission-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(145,106,93,0.2); }
+    .commission-form textarea { resize: vertical; min-height: 120px; }
+    .commission-form .field-error { color: #A85454; font-size: 0.8rem; margin-top: 4px; display: block; }
+    .commission-form .field-hint { color: var(--text-secondary); font-size: 0.8rem; margin-top: 4px; }
+    .commission-form .char-count { color: var(--text-secondary); font-size: 0.75rem; text-align: right; display: block; margin-top: 4px; }
+    .commission-form .price-estimate { background: var(--btn-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-family: var(--font-sans); }
+    .commission-form .price-estimate strong { color: var(--accent); font-size: 1.2rem; margin-left: 10px; }
+    .commission-form .ref-images { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .commission-form .ref-image { position: relative; width: 80px; height: 80px; }
+    .commission-form .ref-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+    .commission-form .ref-image .remove-ref { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: #A85454; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 14px; line-height: 1; }
+    .commission-form .add-ref-btn { width: 80px; height: 80px; border: 2px dashed var(--divider); background: transparent; border-radius: 6px; cursor: pointer; color: var(--text-secondary); font-size: 0.8rem; transition: all 0.2s; }
+    .commission-form .add-ref-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .commission-form .submit-btn { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 50px; font-family: var(--font-sans); font-weight: 500; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+    .commission-form .submit-btn:hover { background: var(--accent-light); transform: scale(1.02); }
+    .commission-form .submit-btn:disabled { background: var(--divider); cursor: not-allowed; transform: none; }
+    .commission-form .form-note { text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-top: 15px; }
+    .commission-form .form-message { padding: 12px; border-radius: 6px; margin-bottom: 20px; text-align: center; }
+    .commission-form .form-message.success { background: #d4edda; color: #155724; }
+    .commission-form .form-message.error { background: #f8d7da; color: #721c24; }
+    .commission-closed { text-align: center; padding: 40px; background: var(--card-bg); border-radius: 0.375rem; border: 1px solid var(--divider); }
+    .commission-closed h3 { color: var(--accent); margin-bottom: 10px; }
+
     @media (max-width: 768px) {
       main.container { padding: 20px; }
       .hero h1 { font-size: 2rem; }
+      .commission-form { padding: 20px; }
+      .commission-form .form-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -300,6 +338,16 @@ const categories = galleryItems.length > 0
           <li>Political / Derogatory</li>
         </ul>
       </div>
+    </section>
+
+    <section id="request" class="commission-request-section">
+      <h2>Request a Commission</h2>
+      <CommissionForm
+        client:load
+        cloudName={import.meta.env.CLOUDINARY_CLOUD_NAME}
+        uploadPreset={import.meta.env.CLOUDINARY_UPLOAD_PRESET}
+        isOpen={config.commissionStatus === 'open'}
+      />
     </section>
   </main>
 
