@@ -55,11 +55,16 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body {
+      min-height: 100vh;
+    }
+
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
+      overflow-y: auto;
     }
 
     .admin-header {
