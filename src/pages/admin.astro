@@ -55,8 +55,9 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html, body {
-      min-height: 100vh;
+    html {
+      height: auto;
+      overflow-y: scroll;
     }
 
     body {
@@ -64,7 +65,8 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      overflow-y: auto;
+      min-height: 100vh;
+      overflow-y: visible;
     }
 
     .admin-header {
