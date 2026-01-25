@@ -8,6 +8,17 @@ interface AdminDashboardProps {
 }
 
 type Tab = 'gallery' | 'commissions' | 'settings';
+type CommissionStatus = 'all' | 'pending' | 'accepted' | 'in_progress' | 'completed' | 'declined';
+type SortField = 'createdAt' | 'clientName' | 'status';
+type SortOrder = 'asc' | 'desc';
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: '#f59e0b',
+  accepted: '#10b981',
+  in_progress: '#3b82f6',
+  completed: '#6366f1',
+  declined: '#ef4444',
+};
 
 export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('gallery');
@@ -16,6 +27,14 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Commission management state
+  const [statusFilter, setStatusFilter] = useState<CommissionStatus>('all');
+  const [sortField, setSortField] = useState<SortField>('createdAt');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [selectedCommission, setSelectedCommission] = useState<CommissionRequest | null>(null);
+  const [editingNotes, setEditingNotes] = useState('');
+  const [editingQuotedPrice, setEditingQuotedPrice] = useState<number | ''>('');
 
   // Form state for new gallery item
   const [newItem, setNewItem] = useState({
@@ -97,9 +116,77 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
         setCommissions(prev =>
           prev.map(c => (c.id === id ? { ...c, status } : c))
         );
+        if (selectedCommission?.id === id) {
+          setSelectedCommission(prev => prev ? { ...prev, status } : null);
+        }
       }
     } catch (err) {
       setError('Failed to update status');
+    }
+  };
+
+  const handleUpdateCommission = async (id: number, updates: Partial<CommissionRequest>) => {
+    try {
+      const res = await fetch(`/api/commissions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setCommissions(prev =>
+          prev.map(c => (c.id === id ? { ...c, ...updates } : c))
+        );
+        if (selectedCommission?.id === id) {
+          setSelectedCommission(prev => prev ? { ...prev, ...updates } : null);
+        }
+        return true;
+      }
+      return false;
+    } catch (err) {
+      setError('Failed to update commission');
+      return false;
+    }
+  };
+
+  const openCommissionDetail = (commission: CommissionRequest) => {
+    setSelectedCommission(commission);
+    setEditingNotes(commission.notes || '');
+    setEditingQuotedPrice(commission.quotedPrice || '');
+  };
+
+  const saveCommissionDetails = async () => {
+    if (!selectedCommission) return;
+    const success = await handleUpdateCommission(selectedCommission.id, {
+      notes: editingNotes,
+      quotedPrice: editingQuotedPrice === '' ? null : Number(editingQuotedPrice),
+    });
+    if (success) {
+      alert('Commission updated!');
+    }
+  };
+
+  // Filter and sort commissions
+  const filteredCommissions = commissions
+    .filter(c => statusFilter === 'all' || c.status === statusFilter)
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'createdAt') {
+        comparison = new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime();
+      } else if (sortField === 'clientName') {
+        comparison = a.clientName.localeCompare(b.clientName);
+      } else if (sortField === 'status') {
+        comparison = (a.status || '').localeCompare(b.status || '');
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
     }
   };
 
@@ -261,51 +348,192 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
       {activeTab === 'commissions' && (
         <div className="admin-section">
           <h2>Commission Requests</h2>
+
+          {/* Filter bar */}
+          <div className="commission-filters">
+            <div className="filter-group">
+              <label>Status:</label>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as CommissionStatus)}>
+                <option value="all">All ({commissions.length})</option>
+                <option value="pending">Pending ({commissions.filter(c => c.status === 'pending').length})</option>
+                <option value="accepted">Accepted ({commissions.filter(c => c.status === 'accepted').length})</option>
+                <option value="in_progress">In Progress ({commissions.filter(c => c.status === 'in_progress').length})</option>
+                <option value="completed">Completed ({commissions.filter(c => c.status === 'completed').length})</option>
+                <option value="declined">Declined ({commissions.filter(c => c.status === 'declined').length})</option>
+              </select>
+            </div>
+          </div>
+
           <table className="commissions-table">
             <thead>
               <tr>
-                <th>Client</th>
+                <th onClick={() => toggleSort('clientName')} className="sortable">
+                  Client {sortField === 'clientName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
                 <th>Type</th>
-                <th>Status</th>
-                <th>Date</th>
+                <th>Price</th>
+                <th onClick={() => toggleSort('status')} className="sortable">
+                  Status {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th onClick={() => toggleSort('createdAt')} className="sortable">
+                  Date {sortField === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {commissions.map(commission => (
-                <tr key={commission.id} className={`status-${commission.status}`}>
-                  <td>
-                    <strong>{commission.clientName}</strong>
-                    <br />
-                    <small>{commission.email}</small>
-                    {commission.discord && <small><br />Discord: {commission.discord}</small>}
-                  </td>
-                  <td>
-                    {commission.artType}
-                    {commission.style && ` (${commission.style})`}
-                  </td>
-                  <td>
+              {filteredCommissions.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="empty-state">No commissions found</td>
+                </tr>
+              ) : (
+                filteredCommissions.map(commission => (
+                  <tr key={commission.id} className={`status-${commission.status}`}>
+                    <td>
+                      <strong>{commission.clientName}</strong>
+                      <br />
+                      <small>{commission.email}</small>
+                      {commission.discord && <small><br />Discord: {commission.discord}</small>}
+                    </td>
+                    <td>
+                      <span className="art-type">{commission.artType}</span>
+                      {commission.style && <span className="style-badge">{commission.style}</span>}
+                    </td>
+                    <td>
+                      {commission.quotedPrice ? (
+                        <strong>₱{commission.quotedPrice}</strong>
+                      ) : commission.estimatedPrice ? (
+                        <span className="estimated">~₱{commission.estimatedPrice}</span>
+                      ) : (
+                        <span className="no-price">-</span>
+                      )}
+                    </td>
+                    <td>
+                      <span
+                        className="status-badge"
+                        style={{ backgroundColor: STATUS_COLORS[commission.status || 'pending'] }}
+                      >
+                        {commission.status || 'pending'}
+                      </span>
+                    </td>
+                    <td>{new Date(commission.createdAt!).toLocaleDateString()}</td>
+                    <td className="actions">
+                      <button className="btn-view" onClick={() => openCommissionDetail(commission)}>
+                        View
+                      </button>
+                      <select
+                        value={commission.status || 'pending'}
+                        onChange={e => handleUpdateCommissionStatus(commission.id, e.target.value)}
+                        className="status-select"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="declined">Declined</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
+          {/* Commission Detail Modal */}
+          {selectedCommission && (
+            <div className="modal-overlay" onClick={() => setSelectedCommission(null)}>
+              <div className="modal-content commission-detail" onClick={e => e.stopPropagation()}>
+                <button className="modal-close" onClick={() => setSelectedCommission(null)}>×</button>
+
+                <div className="modal-header">
+                  <h3>Commission #{selectedCommission.id}</h3>
+                  <span
+                    className="status-badge large"
+                    style={{ backgroundColor: STATUS_COLORS[selectedCommission.status || 'pending'] }}
+                  >
+                    {selectedCommission.status || 'pending'}
+                  </span>
+                </div>
+
+                <div className="detail-grid">
+                  <div className="detail-section">
+                    <h4>Client Info</h4>
+                    <p><strong>Name:</strong> {selectedCommission.clientName}</p>
+                    <p><strong>Email:</strong> <a href={`mailto:${selectedCommission.email}`}>{selectedCommission.email}</a></p>
+                    {selectedCommission.discord && <p><strong>Discord:</strong> {selectedCommission.discord}</p>}
+                    <p><strong>Submitted:</strong> {new Date(selectedCommission.createdAt!).toLocaleString()}</p>
+                  </div>
+
+                  <div className="detail-section">
+                    <h4>Commission Details</h4>
+                    <p><strong>Type:</strong> {selectedCommission.artType}</p>
+                    <p><strong>Style:</strong> {selectedCommission.style || 'Not specified'}</p>
+                    <p><strong>Estimated:</strong> {selectedCommission.estimatedPrice ? `₱${selectedCommission.estimatedPrice}` : 'N/A'}</p>
+                  </div>
+                </div>
+
+                <div className="detail-section">
+                  <h4>Description</h4>
+                  <p className="description-text">{selectedCommission.description}</p>
+                </div>
+
+                {selectedCommission.refImages && selectedCommission.refImages.length > 0 && (
+                  <div className="detail-section">
+                    <h4>Reference Images ({selectedCommission.refImages.length})</h4>
+                    <div className="ref-images-grid">
+                      {selectedCommission.refImages.map((url, i) => (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                          <img src={url.replace('/upload/', '/upload/w_150,h_150,c_fill/')} alt={`Reference ${i + 1}`} />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="detail-section">
+                  <h4>Admin Controls</h4>
+
+                  <div className="form-group">
+                    <label>Status</label>
                     <select
-                      value={commission.status || 'pending'}
-                      onChange={e => handleUpdateCommissionStatus(commission.id, e.target.value)}
+                      value={selectedCommission.status || 'pending'}
+                      onChange={e => handleUpdateCommissionStatus(selectedCommission.id, e.target.value)}
                     >
                       <option value="pending">Pending</option>
                       <option value="accepted">Accepted</option>
                       <option value="in_progress">In Progress</option>
                       <option value="completed">Completed</option>
-                      <option value="rejected">Rejected</option>
+                      <option value="declined">Declined</option>
                     </select>
-                  </td>
-                  <td>{new Date(commission.createdAt!).toLocaleDateString()}</td>
-                  <td>
-                    <button onClick={() => alert(commission.description || 'No description')}>
-                      View Details
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Quoted Price (₱)</label>
+                    <input
+                      type="number"
+                      value={editingQuotedPrice}
+                      onChange={e => setEditingQuotedPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="Enter final price"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Internal Notes</label>
+                    <textarea
+                      value={editingNotes}
+                      onChange={e => setEditingNotes(e.target.value)}
+                      rows={4}
+                      placeholder="Private notes about this commission..."
+                    />
+                  </div>
+
+                  <button className="btn-save" onClick={saveCommissionDetails}>
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
