@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { db, commissionRequests } from '../../../db';
 import { eq } from 'drizzle-orm';
 import { checkAuth, unauthorizedResponse } from '../../../lib/auth';
+import { sendStatusUpdateEmail } from '../../../lib/email';
 
 // PATCH /api/commissions/:id - Update commission status
 export const PATCH: APIRoute = async ({ params, request }) => {
@@ -16,6 +17,19 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (isNaN(id)) {
       return new Response(JSON.stringify({ error: 'Invalid ID' }), {
         status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Get current commission to check for status change
+    const [current] = await db
+      .select()
+      .from(commissionRequests)
+      .where(eq(commissionRequests.id, id));
+
+    if (!current) {
+      return new Response(JSON.stringify({ error: 'Commission not found' }), {
+        status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -35,6 +49,17 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       .set(updates)
       .where(eq(commissionRequests.id, id))
       .returning();
+
+    // Send email notification if status changed (and sendEmail not explicitly false)
+    if (body.status && body.status !== current.status && body.sendEmail !== false) {
+      sendStatusUpdateEmail(
+        updated.email,
+        updated.clientName,
+        updated.id,
+        body.status,
+        body.statusNote // Optional note to include in the email
+      ).catch(err => console.error('Status update email error:', err));
+    }
 
     return new Response(JSON.stringify(updated), {
       status: 200,

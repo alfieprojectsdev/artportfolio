@@ -2,6 +2,7 @@ import { defineAction } from 'astro:actions';
 import { z } from 'zod';
 import { db, commissionRequests } from '../db';
 import { CommissionRequestSchema, calculateEstimatedPrice } from '../lib/schemas';
+import { sendNewCommissionNotification, sendCommissionConfirmation } from '../lib/email';
 
 export const server = {
   submitCommission: defineAction({
@@ -28,8 +29,29 @@ export const server = {
           })
           .returning();
 
-        // TODO: Send email notification via Resend
-        // await sendNotificationEmail(newRequest);
+        // Send email notifications (fire and forget - don't block response)
+        Promise.all([
+          sendNewCommissionNotification({
+            id: newRequest.id,
+            clientName: newRequest.clientName,
+            email: newRequest.email,
+            discord: newRequest.discord,
+            artType: newRequest.artType,
+            style: newRequest.style,
+            description: newRequest.description,
+            estimatedPrice: newRequest.estimatedPrice,
+            refImages: newRequest.refImages || [],
+          }),
+          sendCommissionConfirmation({
+            id: newRequest.id,
+            clientName: newRequest.clientName,
+            email: newRequest.email,
+            artType: newRequest.artType,
+            style: newRequest.style,
+            description: newRequest.description,
+            estimatedPrice: newRequest.estimatedPrice,
+          }),
+        ]).catch(err => console.error('Email notification error:', err));
 
         return {
           success: true,
