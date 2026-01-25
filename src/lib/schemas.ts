@@ -18,14 +18,14 @@ export const CommissionRequestSchema = z.object({
     .email('Please enter a valid email address'),
   discord: z.string()
     .max(50, 'Discord username must be less than 50 characters')
-    .optional()
-    .or(z.literal('')),
+    .nullish()
+    .transform(val => val || undefined),
   artType: ArtTypeEnum,
   style: StyleEnum,
   description: z.string()
     .min(20, 'Please provide at least 20 characters describing your commission')
     .max(2000, 'Description must be less than 2000 characters'),
-  refImages: z.array(z.string().url()).max(5, 'Maximum 5 reference images').default([]),
+  refImages: z.array(z.string().url()).max(5, 'Maximum 5 reference images').optional().default([]),
 });
 
 export type CommissionRequestInput = z.infer<typeof CommissionRequestSchema>;

@@ -84,7 +84,22 @@ export default function CommissionForm({ cloudName, uploadPreset, isOpen }: Comm
     setSubmitResult(null);
 
     try {
-      const result = await actions.submitCommission(formData);
+      // Convert to FormData since action has accept: 'form'
+      const submitData = new FormData();
+      submitData.append('clientName', formData.clientName);
+      submitData.append('email', formData.email);
+      if (formData.discord) {
+        submitData.append('discord', formData.discord);
+      }
+      submitData.append('artType', formData.artType);
+      submitData.append('style', formData.style);
+      submitData.append('description', formData.description);
+      // Send each ref image URL separately for FormData array handling
+      formData.refImages.forEach((url) => {
+        submitData.append('refImages', url);
+      });
+
+      const result = await actions.submitCommission(submitData);
 
       if (result.error) {
         // Handle validation errors
