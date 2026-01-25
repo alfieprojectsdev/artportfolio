@@ -18,18 +18,33 @@
 
 ### Fix 1: CloudinaryUploadWidget Duplicate Image Bug
 **Commit:** `183b824`
+**File:** `src/components/admin/CloudinaryUploadWidget.tsx`
 
-The widget was loading the Cloudinary script multiple times, causing race conditions where the same image appeared in both flat/rendered preview slots.
+**Problem:** When the admin dashboard had two upload widgets (one for "Flat" and one for "Rendered"), uploading to either widget would show the same image in both previews. This was caused by:
 
-**Solution:**
+1. **Multiple script loads:** Each widget instance tried to load the Cloudinary script independently, causing race conditions
+2. **Stale closures:** The `onUpload` callback captured old state, so all widgets fired the same callback
+3. **No instance isolation:** Widgets weren't distinguished from each other
+
+**Root Cause Analysis:**
 ```typescript
-// Load script once globally
+// BEFORE: Each component loaded script independently
+useEffect(() => {
+  const script = document.createElement('script');
+  script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
+  document.body.appendChild(script); // Multiple scripts!
+}, []);
+```
+
+**Solution 1 - Global Script Singleton:**
+```typescript
+// Load script once globally using window flags
 function loadCloudinaryScript(): Promise<void> {
   if (window.cloudinaryScriptLoaded) {
     return Promise.resolve();
   }
   if (window.cloudinaryScriptLoading) {
-    return window.cloudinaryScriptLoading;
+    return window.cloudinaryScriptLoading; // Return existing promise
   }
   window.cloudinaryScriptLoading = new Promise((resolve, reject) => {
     const script = document.createElement('script');
@@ -46,9 +61,36 @@ function loadCloudinaryScript(): Promise<void> {
 }
 ```
 
-Additional fixes:
-- Used refs for callbacks to prevent stale closures
-- Added unique IDs to widget instances
+**Solution 2 - Refs for Stable Callbacks:**
+```typescript
+const onUploadRef = useRef(onUpload);
+
+// Keep callback ref updated without recreating widget
+useEffect(() => {
+  onUploadRef.current = onUpload;
+}, [onUpload]);
+
+// Stable callback that uses the ref
+const handleUploadResult = useCallback((error, result) => {
+  if (result.event === 'success') {
+    onUploadRef.current(result.info); // Always calls current callback
+  }
+}, []);
+```
+
+**Solution 3 - Unique Instance IDs:**
+```typescript
+interface CloudinaryUploadWidgetProps {
+  id?: string; // Unique identifier for this widget instance
+}
+
+// In useEffect dependencies:
+useEffect(() => {
+  // Widget creation...
+}, [cloudName, uploadPreset, id, handleUploadResult]);
+```
+
+**Result:** Each upload widget now correctly updates only its own preview image
 
 ### Fix 2: Artist Name UI Bug
 **Commit:** `cb35f11`
@@ -69,11 +111,84 @@ artistName: settings?.artistName || defaults.artistName,
 
 ### Feature 1: ArtSlider Component
 **Commit:** `4e93b18`
+**File:** `src/components/ArtSlider.astro`
 
-Zero-dependency before/after slider using CSS clip-path:
-- `src/components/ArtSlider.astro`
-- Uses hidden range input for keyboard/touch accessibility
-- CSS custom property `--exposure` controls clip position
+A zero-dependency before/after image comparison slider for showcasing flat vs rendered artwork.
+
+**Design Goals:**
+- No JavaScript libraries (vanilla JS only)
+- Keyboard and touch accessible
+- Works in lightbox and gallery contexts
+- Lazy loading for performance
+
+**Implementation:**
+
+```astro
+---
+interface Props {
+  before: string;  // Flat art URL
+  after: string;   // Rendered art URL
+  alt?: string;
+}
+const { before, after, alt = "Artwork comparison" } = Astro.props;
+---
+
+<div class="comparison-container" style="--exposure: 50%;">
+  <!-- Base layer: Flat version -->
+  <img src={before} alt={`${alt} - Flat version`} loading="lazy" />
+
+  <!-- Overlay layer: Rendered version (clipped) -->
+  <div class="rendered-layer">
+    <img src={after} alt={`${alt} - Rendered version`} loading="lazy" />
+  </div>
+
+  <!-- Hidden range input for accessibility -->
+  <input type="range" min="0" max="100" value="50"
+         class="slider-input"
+         aria-label="Slide to compare flat and rendered art" />
+
+  <!-- Visual handle -->
+  <div class="slider-handle" aria-hidden="true"></div>
+</div>
+```
+
+**CSS Technique - clip-path with CSS Variable:**
+```css
+.rendered-layer {
+  position: absolute;
+  inset: 0;
+  /* Clips from right edge based on --exposure value
+     0% = fully hidden, 100% = fully visible */
+  clip-path: inset(0 calc(100% - var(--exposure)) 0 0);
+}
+
+.slider-handle {
+  left: var(--exposure); /* Handle follows the clip edge */
+}
+```
+
+**JavaScript - Event Delegation:**
+```javascript
+const containers = document.querySelectorAll('.comparison-container');
+containers.forEach(container => {
+  const slider = container.querySelector('.slider-input');
+  slider?.addEventListener('input', (e) => {
+    container.style.setProperty('--exposure', `${e.target.value}%`);
+  });
+});
+```
+
+**Accessibility Features:**
+- Hidden `<input type="range">` provides keyboard navigation (arrow keys)
+- Touch/drag works via the native range input
+- Screen readers announce "Slide to compare flat and rendered art"
+- Visual handle with ↔ icon indicates interactivity
+
+**Visual Design:**
+- White vertical line with drop shadow
+- Circular drag handle with ↔ symbol
+- 8px border radius on container
+- `cursor: ew-resize` for drag affordance
 
 ### Feature 2: Dual Image Upload Support
 **Commit:** `421da86`
