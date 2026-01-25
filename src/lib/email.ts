@@ -1,11 +1,26 @@
 import { Resend } from 'resend';
 
-// Initialize Resend client
-const resend = new Resend(import.meta.env.RESEND_API_KEY);
+// Lazy-initialize Resend client to avoid issues when API key is not set
+let resendClient: Resend | null = null;
+
+function getResendClient(): Resend | null {
+  if (!import.meta.env.RESEND_API_KEY) {
+    return null;
+  }
+  if (!resendClient) {
+    resendClient = new Resend(import.meta.env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 // Artist's email (from env or default)
-const ARTIST_EMAIL = import.meta.env.ARTIST_EMAIL || 'bred@example.com';
-const FROM_EMAIL = import.meta.env.FROM_EMAIL || 'commissions@resend.dev';
+function getArtistEmail(): string {
+  return import.meta.env.ARTIST_EMAIL || 'bred@example.com';
+}
+
+function getFromEmail(): string {
+  return import.meta.env.FROM_EMAIL || 'commissions@resend.dev';
+}
 
 interface CommissionEmailData {
   id: number;
@@ -23,7 +38,8 @@ interface CommissionEmailData {
  * Send notification to artist when a new commission is submitted
  */
 export async function sendNewCommissionNotification(commission: CommissionEmailData): Promise<boolean> {
-  if (!import.meta.env.RESEND_API_KEY) {
+  const resend = getResendClient();
+  if (!resend) {
     console.log('RESEND_API_KEY not set, skipping email notification');
     return false;
   }
@@ -39,8 +55,8 @@ export async function sendNewCommissionNotification(commission: CommissionEmailD
       : '';
 
     const { data, error } = await resend.emails.send({
-      from: `Commission Bot <${FROM_EMAIL}>`,
-      to: [ARTIST_EMAIL],
+      from: `Commission Bot <${getFromEmail()}>`,
+      to: [getArtistEmail()],
       subject: `New Commission Request from ${commission.clientName}`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -98,14 +114,15 @@ export async function sendNewCommissionNotification(commission: CommissionEmailD
  * Send confirmation email to client when their commission is submitted
  */
 export async function sendCommissionConfirmation(commission: CommissionEmailData): Promise<boolean> {
-  if (!import.meta.env.RESEND_API_KEY) {
+  const resend = getResendClient();
+  if (!resend) {
     console.log('RESEND_API_KEY not set, skipping confirmation email');
     return false;
   }
 
   try {
     const { data, error } = await resend.emails.send({
-      from: `Bred's Commissions <${FROM_EMAIL}>`,
+      from: `Bred's Commissions <${getFromEmail()}>`,
       to: [commission.email],
       subject: 'Commission Request Received!',
       html: `
@@ -167,7 +184,8 @@ export async function sendStatusUpdateEmail(
   newStatus: string,
   notes?: string
 ): Promise<boolean> {
-  if (!import.meta.env.RESEND_API_KEY) {
+  const resend = getResendClient();
+  if (!resend) {
     console.log('RESEND_API_KEY not set, skipping status update email');
     return false;
   }
@@ -198,7 +216,7 @@ export async function sendStatusUpdateEmail(
 
   try {
     const { data, error } = await resend.emails.send({
-      from: `Bred's Commissions <${FROM_EMAIL}>`,
+      from: `Bred's Commissions <${getFromEmail()}>`,
       to: [clientEmail],
       subject: statusInfo.subject,
       html: `
