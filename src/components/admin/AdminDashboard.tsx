@@ -243,80 +243,90 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
           <form onSubmit={handleAddGalleryItem} className="add-item-form">
             <h3>Add New Artwork</h3>
 
-            <div className="form-group">
-              <label>Rendered Image (Required)</label>
-              <p className="field-hint">The final/rendered version of the artwork</p>
-              {newItem.imageUrl ? (
-                <div className="preview-image">
-                  <img src={newItem.imageUrl.replace('/upload/', '/upload/w_400,q_auto,f_auto/')} alt="Rendered preview" />
-                  <button type="button" onClick={() => setNewItem(prev => ({ ...prev, imageUrl: '' }))}>
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <CloudinaryUploadWidget
-                  key="rendered-upload"
-                  id="rendered-upload"
-                  cloudName={cloudName}
-                  uploadPreset={uploadPreset}
-                  onUpload={(result) => handleImageUpload(result, 'rendered')}
+            <fieldset className="form-fieldset">
+              <legend>Images</legend>
+
+              <div className="form-group">
+                <label>Rendered Image (Required)</label>
+                <p className="field-hint">The final/rendered version of the artwork</p>
+                {newItem.imageUrl ? (
+                  <div className="preview-image">
+                    <img src={newItem.imageUrl.replace('/upload/', '/upload/w_400,q_auto,f_auto/')} alt="Rendered preview" />
+                    <button type="button" onClick={() => setNewItem(prev => ({ ...prev, imageUrl: '' }))}>
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <CloudinaryUploadWidget
+                    key="rendered-upload"
+                    id="rendered-upload"
+                    cloudName={cloudName}
+                    uploadPreset={uploadPreset}
+                    onUpload={(result) => handleImageUpload(result, 'rendered')}
+                  />
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Flat Image (Optional)</label>
+                <p className="field-hint">The flat/sketch version for before/after comparison slider</p>
+                {newItem.flatUrl ? (
+                  <div className="preview-image">
+                    <img src={newItem.flatUrl.replace('/upload/', '/upload/w_400,q_auto,f_auto/')} alt="Flat preview" />
+                    <button type="button" onClick={() => setNewItem(prev => ({ ...prev, flatUrl: '' }))}>
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <CloudinaryUploadWidget
+                    key="flat-upload"
+                    id="flat-upload"
+                    cloudName={cloudName}
+                    uploadPreset={uploadPreset}
+                    onUpload={(result) => handleImageUpload(result, 'flat')}
+                  />
+                )}
+              </div>
+            </fieldset>
+
+            <fieldset className="form-fieldset">
+              <legend>Artwork Details</legend>
+
+              <div className="form-group">
+                <label>Title</label>
+                <input
+                  type="text"
+                  value={newItem.title}
+                  onChange={e => setNewItem(prev => ({ ...prev, title: e.target.value }))}
+                  required
                 />
-              )}
-            </div>
+              </div>
 
-            <div className="form-group">
-              <label>Flat Image (Optional)</label>
-              <p className="field-hint">The flat/sketch version for before/after comparison slider</p>
-              {newItem.flatUrl ? (
-                <div className="preview-image">
-                  <img src={newItem.flatUrl.replace('/upload/', '/upload/w_400,q_auto,f_auto/')} alt="Flat preview" />
-                  <button type="button" onClick={() => setNewItem(prev => ({ ...prev, flatUrl: '' }))}>
-                    Remove
-                  </button>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Category</label>
+                  <select
+                    value={newItem.category}
+                    onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))}
+                  >
+                    <option value="commission">Commission</option>
+                    <option value="fanart">Fanart</option>
+                    <option value="original">Original</option>
+                    <option value="wip">Work in Progress</option>
+                  </select>
                 </div>
-              ) : (
-                <CloudinaryUploadWidget
-                  key="flat-upload"
-                  id="flat-upload"
-                  cloudName={cloudName}
-                  uploadPreset={uploadPreset}
-                  onUpload={(result) => handleImageUpload(result, 'flat')}
-                />
-              )}
-            </div>
 
-            <div className="form-group">
-              <label>Title</label>
-              <input
-                type="text"
-                value={newItem.title}
-                onChange={e => setNewItem(prev => ({ ...prev, title: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Category</label>
-              <select
-                value={newItem.category}
-                onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))}
-              >
-                <option value="commission">Commission</option>
-                <option value="fanart">Fanart</option>
-                <option value="original">Original</option>
-                <option value="wip">Work in Progress</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Alt Text (for accessibility)</label>
-              <input
-                type="text"
-                value={newItem.altText}
-                onChange={e => setNewItem(prev => ({ ...prev, altText: e.target.value }))}
-                placeholder="Describe the image"
-              />
-            </div>
+                <div className="form-group">
+                  <label>Alt Text (accessibility)</label>
+                  <input
+                    type="text"
+                    value={newItem.altText}
+                    onChange={e => setNewItem(prev => ({ ...prev, altText: e.target.value }))}
+                    placeholder="Describe the image"
+                  />
+                </div>
+              </div>
+            </fieldset>
 
             <button type="submit" disabled={!newItem.imageUrl || !newItem.title}>
               Add to Gallery
@@ -456,30 +466,30 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                 </div>
 
                 <div className="detail-grid">
-                  <div className="detail-section">
-                    <h4>Client Info</h4>
+                  <fieldset className="form-fieldset modal-fieldset">
+                    <legend>Client Info</legend>
                     <p><strong>Name:</strong> {selectedCommission.clientName}</p>
                     <p><strong>Email:</strong> <a href={`mailto:${selectedCommission.email}`}>{selectedCommission.email}</a></p>
                     {selectedCommission.discord && <p><strong>Discord:</strong> {selectedCommission.discord}</p>}
                     <p><strong>Submitted:</strong> {new Date(selectedCommission.createdAt!).toLocaleString()}</p>
-                  </div>
+                  </fieldset>
 
-                  <div className="detail-section">
-                    <h4>Commission Details</h4>
+                  <fieldset className="form-fieldset modal-fieldset">
+                    <legend>Commission Details</legend>
                     <p><strong>Type:</strong> {selectedCommission.artType}</p>
                     <p><strong>Style:</strong> {selectedCommission.style || 'Not specified'}</p>
                     <p><strong>Estimated:</strong> {selectedCommission.estimatedPrice ? `₱${selectedCommission.estimatedPrice}` : 'N/A'}</p>
-                  </div>
+                  </fieldset>
                 </div>
 
-                <div className="detail-section">
-                  <h4>Description</h4>
+                <fieldset className="form-fieldset modal-fieldset">
+                  <legend>Description</legend>
                   <p className="description-text">{selectedCommission.description}</p>
-                </div>
+                </fieldset>
 
                 {selectedCommission.refImages && selectedCommission.refImages.length > 0 && (
-                  <div className="detail-section">
-                    <h4>Reference Images ({selectedCommission.refImages.length})</h4>
+                  <fieldset className="form-fieldset modal-fieldset">
+                    <legend>Reference Images ({selectedCommission.refImages.length})</legend>
                     <div className="ref-images-grid">
                       {selectedCommission.refImages.map((url, i) => (
                         <a key={i} href={url} target="_blank" rel="noopener noreferrer">
@@ -487,34 +497,36 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                         </a>
                       ))}
                     </div>
-                  </div>
+                  </fieldset>
                 )}
 
-                <div className="detail-section">
-                  <h4>Admin Controls</h4>
+                <fieldset className="form-fieldset modal-fieldset">
+                  <legend>Admin Controls</legend>
 
-                  <div className="form-group">
-                    <label>Status</label>
-                    <select
-                      value={selectedCommission.status || 'pending'}
-                      onChange={e => handleUpdateCommissionStatus(selectedCommission.id, e.target.value)}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="accepted">Accepted</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="declined">Declined</option>
-                    </select>
-                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Status</label>
+                      <select
+                        value={selectedCommission.status || 'pending'}
+                        onChange={e => handleUpdateCommissionStatus(selectedCommission.id, e.target.value)}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="declined">Declined</option>
+                      </select>
+                    </div>
 
-                  <div className="form-group">
-                    <label>Quoted Price (₱)</label>
-                    <input
-                      type="number"
-                      value={editingQuotedPrice}
-                      onChange={e => setEditingQuotedPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                      placeholder="Enter final price"
-                    />
+                    <div className="form-group">
+                      <label>Quoted Price (₱)</label>
+                      <input
+                        type="number"
+                        value={editingQuotedPrice}
+                        onChange={e => setEditingQuotedPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="Enter final price"
+                      />
+                    </div>
                   </div>
 
                   <div className="form-group">
@@ -530,7 +542,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                   <button className="btn-save" onClick={saveCommissionDetails}>
                     Save Changes
                   </button>
-                </div>
+                </fieldset>
               </div>
             </div>
           )}
@@ -541,78 +553,92 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
         <div className="admin-section">
           <h2>Site Settings</h2>
           <form onSubmit={handleUpdateSettings} className="settings-form">
-            <div className="form-group">
-              <label>Commission Status</label>
-              <select
-                value={settings.commissionStatus || 'open'}
-                onChange={e => setSettings(prev => prev ? { ...prev, commissionStatus: e.target.value } : null)}
-              >
-                <option value="open">Open</option>
-                <option value="closed">Closed</option>
-                <option value="waitlist">Waitlist</option>
-              </select>
-            </div>
+            <fieldset className="form-fieldset">
+              <legend>Commission Status</legend>
+              <div className="form-group">
+                <label>Current Status</label>
+                <select
+                  value={settings.commissionStatus || 'open'}
+                  onChange={e => setSettings(prev => prev ? { ...prev, commissionStatus: e.target.value } : null)}
+                >
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                  <option value="waitlist">Waitlist</option>
+                </select>
+                <p className="field-hint">Controls whether the commission form is visible to visitors</p>
+              </div>
+            </fieldset>
 
-            <div className="form-group">
-              <label>Artist Name</label>
-              <input
-                type="text"
-                value={settings.artistName || ''}
-                onChange={e => setSettings(prev => prev ? { ...prev, artistName: e.target.value } : null)}
-              />
-            </div>
+            <fieldset className="form-fieldset">
+              <legend>Artist Profile</legend>
+              <div className="form-group">
+                <label>Artist Name</label>
+                <input
+                  type="text"
+                  value={settings.artistName || ''}
+                  onChange={e => setSettings(prev => prev ? { ...prev, artistName: e.target.value } : null)}
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Bio</label>
-              <textarea
-                value={settings.bio || ''}
-                onChange={e => setSettings(prev => prev ? { ...prev, bio: e.target.value } : null)}
-                rows={4}
-              />
-            </div>
+              <div className="form-group">
+                <label>Bio</label>
+                <textarea
+                  value={settings.bio || ''}
+                  onChange={e => setSettings(prev => prev ? { ...prev, bio: e.target.value } : null)}
+                  rows={4}
+                />
+              </div>
+            </fieldset>
 
-            <div className="form-group">
-              <label>Instagram Handle</label>
-              <input
-                type="text"
-                value={settings.instagram || ''}
-                onChange={e => setSettings(prev => prev ? { ...prev, instagram: e.target.value } : null)}
-                placeholder="@username"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Discord Username</label>
-              <input
-                type="text"
-                value={settings.discord || ''}
-                onChange={e => setSettings(prev => prev ? { ...prev, discord: e.target.value } : null)}
-              />
-            </div>
-
-            <h3>Pricing (PHP)</h3>
-            <div className="pricing-grid">
-              {(['bust', 'half', 'full', 'chibi'] as const).map(type => (
-                <div key={type} className="pricing-card">
-                  <h4>{type.charAt(0).toUpperCase() + type.slice(1)}</h4>
-                  {(['Sketch', 'Flat', 'Rendered'] as const).map(style => {
-                    const key = `${type}${style}` as keyof SiteSettings;
-                    return (
-                      <div key={style} className="price-input">
-                        <label>{style}</label>
-                        <input
-                          type="number"
-                          value={(settings[key] as number) || 0}
-                          onChange={e => setSettings(prev =>
-                            prev ? { ...prev, [key]: parseInt(e.target.value) || 0 } : null
-                          )}
-                        />
-                      </div>
-                    );
-                  })}
+            <fieldset className="form-fieldset">
+              <legend>Social Links</legend>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Instagram Handle</label>
+                  <input
+                    type="text"
+                    value={settings.instagram || ''}
+                    onChange={e => setSettings(prev => prev ? { ...prev, instagram: e.target.value } : null)}
+                    placeholder="@username"
+                  />
                 </div>
-              ))}
-            </div>
+
+                <div className="form-group">
+                  <label>Discord Username</label>
+                  <input
+                    type="text"
+                    value={settings.discord || ''}
+                    onChange={e => setSettings(prev => prev ? { ...prev, discord: e.target.value } : null)}
+                  />
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="form-fieldset">
+              <legend>Pricing (PHP)</legend>
+              <div className="pricing-grid">
+                {(['bust', 'half', 'full', 'chibi'] as const).map(type => (
+                  <div key={type} className="pricing-card">
+                    <h4>{type.charAt(0).toUpperCase() + type.slice(1)}</h4>
+                    {(['Sketch', 'Flat', 'Rendered'] as const).map(style => {
+                      const key = `${type}${style}` as keyof SiteSettings;
+                      return (
+                        <div key={style} className="price-input">
+                          <label>{style}</label>
+                          <input
+                            type="number"
+                            value={(settings[key] as number) || 0}
+                            onChange={e => setSettings(prev =>
+                              prev ? { ...prev, [key]: parseInt(e.target.value) || 0 } : null
+                            )}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </fieldset>
 
             <button type="submit">Save Settings</button>
           </form>

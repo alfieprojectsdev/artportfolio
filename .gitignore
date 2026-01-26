@@ -38,3 +38,4 @@ pro_git.sh
 resend_API.md
 API_keys.md
 worktrees/
+.vercel
