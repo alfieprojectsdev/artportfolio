@@ -172,6 +172,119 @@ const categories = galleryItems.length > 0
     .privacy-note a { color: var(--accent); text-decoration: none; }
     .privacy-note a:hover { text-decoration: underline; }
 
+    /* Floating Navigation */
+    .floating-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: linear-gradient(135deg, rgba(145, 106, 93, 0.95) 0%, rgba(122, 90, 79, 0.95) 100%);
+      backdrop-filter: blur(10px);
+      padding: 0.75rem 1rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+      transform: translateY(-100%);
+      transition: transform 0.3s ease;
+    }
+
+    .floating-nav.visible {
+      transform: translateY(0);
+    }
+
+    .floating-nav-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .floating-nav-brand {
+      font-family: var(--font-serif);
+      font-weight: 600;
+      color: white;
+      font-size: 1.1rem;
+      white-space: nowrap;
+    }
+
+    .floating-nav-links {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .floating-nav-links a {
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      transition: all 0.2s ease;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .floating-nav-links a:hover {
+      background: rgba(255, 255, 255, 0.25);
+      color: white;
+    }
+
+    /* Back to Top Button */
+    .back-to-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 99;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 12px rgba(145, 106, 93, 0.4);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+
+    .back-to-top.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .back-to-top:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(145, 106, 93, 0.5);
+    }
+
+    @media (max-width: 768px) {
+      .floating-nav {
+        padding: 0.5rem 0.75rem;
+      }
+
+      .floating-nav-brand {
+        font-size: 0.95rem;
+      }
+
+      .floating-nav-links a {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+      }
+
+      .back-to-top {
+        bottom: 1.5rem;
+        right: 1.5rem;
+        width: 42px;
+        height: 42px;
+      }
+    }
+
     .lightbox { display: none; position: fixed; z-index: 1000; padding-top: 50px; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(112,63,63,0.9); }
     .lightbox.open { display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .lightbox-content { margin: auto; display: block; width: 80%; max-width: 1200px; max-height: 80vh; object-fit: contain; border-radius: 0.375rem; }
@@ -221,7 +334,23 @@ const categories = galleryItems.length > 0
   </style>
 </head>
 <body>
-  <header class="hero">
+  <!-- Floating Navigation -->
+  <nav class="floating-nav" id="floatingNav">
+    <div class="floating-nav-inner">
+      <span class="floating-nav-brand">{config.artistName}'s Commissions</span>
+      <div class="floating-nav-links">
+        <a href="#gallery">Gallery</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#tos">TOS</a>
+        <a href="#request">Request</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Back to Top Button -->
+  <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+  <header class="hero" id="top">
     <div class="container">
       <img src="/assets/profile.jpg" alt={`${config.artistName} Avatar`} class="profile-pic">
       <h1>{config.artistName}'s Commissions</h1>
@@ -429,6 +558,57 @@ const categories = galleryItems.length > 0
         const original = this.textContent;
         this.textContent = 'Copied!';
         setTimeout(() => { this.textContent = `Discord: ${user}`; }, 2000);
+      });
+    });
+
+    // Floating nav and back-to-top visibility
+    const floatingNav = document.getElementById('floatingNav');
+    const backToTop = document.getElementById('backToTop');
+    const heroSection = document.querySelector('.hero');
+    let heroBottom = heroSection ? heroSection.offsetTop + heroSection.offsetHeight : 300;
+
+    function updateScrollElements() {
+      const scrollY = window.scrollY;
+
+      // Show floating nav after scrolling past hero
+      if (scrollY > heroBottom - 50) {
+        floatingNav?.classList.add('visible');
+      } else {
+        floatingNav?.classList.remove('visible');
+      }
+
+      // Show back-to-top after scrolling down 400px
+      if (scrollY > 400) {
+        backToTop?.classList.add('visible');
+      } else {
+        backToTop?.classList.remove('visible');
+      }
+    }
+
+    // Recalculate hero bottom on resize
+    window.addEventListener('resize', () => {
+      heroBottom = heroSection ? heroSection.offsetTop + heroSection.offsetHeight : 300;
+    });
+
+    window.addEventListener('scroll', updateScrollElements);
+    updateScrollElements(); // Initial check
+
+    // Back to top click handler
+    backToTop?.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Smooth scroll for nav links
+    document.querySelectorAll('.floating-nav-links a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href');
+        const target = document.querySelector(targetId);
+        if (target) {
+          const navHeight = floatingNav?.offsetHeight || 0;
+          const targetPosition = target.offsetTop - navHeight - 10;
+          window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+        }
       });
     });
   </script>
