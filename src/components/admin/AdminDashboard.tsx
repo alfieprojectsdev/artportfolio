@@ -217,18 +217,42 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
         <button
           className={activeTab === 'gallery' ? 'active' : ''}
           onClick={() => setActiveTab('gallery')}
+          style={activeTab === 'gallery' ? {
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+            color: '#ffffff',
+            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.5)',
+            fontWeight: 700,
+            transform: 'scale(1.03)',
+            border: '2px solid rgba(255, 255, 255, 0.3)'
+          } : {}}
         >
           Gallery ({galleryItems.length})
         </button>
         <button
           className={activeTab === 'commissions' ? 'active' : ''}
           onClick={() => setActiveTab('commissions')}
+          style={activeTab === 'commissions' ? {
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+            color: '#ffffff',
+            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.5)',
+            fontWeight: 700,
+            transform: 'scale(1.03)',
+            border: '2px solid rgba(255, 255, 255, 0.3)'
+          } : {}}
         >
           Commissions ({commissions.filter(c => c.status === 'pending').length} pending)
         </button>
         <button
           className={activeTab === 'settings' ? 'active' : ''}
           onClick={() => setActiveTab('settings')}
+          style={activeTab === 'settings' ? {
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+            color: '#ffffff',
+            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.5)',
+            fontWeight: 700,
+            transform: 'scale(1.03)',
+            border: '2px solid rgba(255, 255, 255, 0.3)'
+          } : {}}
         >
           Settings
         </button>
