@@ -340,6 +340,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                 <img src={item.imageUrl.replace('/upload/', '/upload/w_100,h_100,c_fill/')} alt={item.altText || item.title} />
                 <div className="item-info">
                   <strong>{item.title}</strong>
+                  <span className="separator" aria-hidden="true">|</span>
                   <span className="category">{item.category}</span>
                   {item.flatUrl && <span className="has-slider" title="Has before/after comparison">↔</span>}
                 </div>

@@ -41,16 +41,21 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f5f5f5;
+      --bg: #f8f9fc;
       --card-bg: #ffffff;
-      --text: #1a1a1a;
-      --text-secondary: #666666;
-      --accent: #916A5D;
-      --accent-hover: #7a5a4f;
-      --success: #4A7A4A;
-      --warning: #D4AA00;
-      --error: #A85454;
-      --border: #e0e0e0;
+      --text: #1a1a2e;
+      --text-secondary: #4a5568;
+      --accent: #8b5cf6;
+      --accent-hover: #7c3aed;
+      --accent-light: #ede9fe;
+      --success: #10b981;
+      --success-light: #d1fae5;
+      --warning: #f59e0b;
+      --warning-light: #fef3c7;
+      --error: #ef4444;
+      --error-light: #fee2e2;
+      --border: #e2e8f0;
+      --border-focus: #a78bfa;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -70,12 +75,13 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
     }
 
     .admin-header {
-      background: var(--accent);
+      background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #3b82f6 100%);
       color: white;
       padding: 1rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
     }
 
     .admin-header h1 {
@@ -113,19 +119,22 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
       background: transparent;
       cursor: pointer;
       font-size: 1rem;
+      font-weight: 500;
       color: var(--text-secondary);
       border-radius: 8px 8px 0 0;
       transition: all 0.2s;
+      position: relative;
     }
 
     .admin-nav button:hover {
-      background: var(--card-bg);
-      color: var(--text);
+      background: var(--accent-light);
+      color: var(--accent);
     }
 
     .admin-nav button.active {
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
       color: white;
+      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
     }
 
     .admin-section {
@@ -160,19 +169,23 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
     /* Fieldsets */
     .form-fieldset {
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 1.25rem 1.5rem 1.5rem;
       margin-bottom: 1.5rem;
-      background: #fafafa;
+      background: linear-gradient(135deg, #fafbff 0%, #f8f9fc 100%);
+      box-shadow: 0 1px 3px rgba(139, 92, 246, 0.05);
     }
 
     .form-fieldset legend {
       font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--accent);
-      padding: 0 0.75rem;
+      font-size: 0.85rem;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+      padding: 0.35rem 1rem;
+      border-radius: 6px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
     }
 
     .modal-fieldset {
@@ -217,31 +230,37 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
     .form-group select:focus,
     .form-group textarea:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(145, 106, 93, 0.1);
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
     }
 
     button[type="submit"],
     .upload-btn {
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
       color: white;
       border: none;
       padding: 0.75rem 1.5rem;
       border-radius: 8px;
       font-size: 1rem;
+      font-weight: 500;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
     }
 
     button[type="submit"]:hover,
     .upload-btn:hover {
-      background: var(--accent-hover);
+      background: linear-gradient(135deg, var(--accent-hover) 0%, #6d28d9 100%);
+      box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+      transform: translateY(-1px);
     }
 
     button[type="submit"]:disabled,
     .upload-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     .delete-btn {
@@ -282,13 +301,20 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
       flex: 1;
     }
 
+    .gallery-list-item .separator {
+      color: var(--border);
+      margin: 0 0.5rem;
+      font-weight: 300;
+    }
+
     .gallery-list-item .category {
       display: inline-block;
-      background: var(--bg);
+      background: var(--accent-light);
+      color: var(--accent);
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
       font-size: 0.75rem;
-      margin-left: 0.5rem;
+      font-weight: 500;
       text-transform: uppercase;
     }
 
@@ -353,19 +379,24 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
     }
 
     .commissions-table tr.status-pending {
-      background: #fffbeb;
+      background: linear-gradient(90deg, #fef3c7 0%, #fff 50%);
+    }
+
+    .commissions-table tr.status-accepted {
+      background: linear-gradient(90deg, #d1fae5 0%, #fff 50%);
     }
 
     .commissions-table tr.status-in_progress {
-      background: #f0f9ff;
+      background: linear-gradient(90deg, #dbeafe 0%, #fff 50%);
     }
 
     .commissions-table tr.status-completed {
-      background: #f0fdf4;
+      background: linear-gradient(90deg, #e0e7ff 0%, #fff 50%);
     }
 
+    .commissions-table tr.status-declined,
     .commissions-table tr.status-rejected {
-      background: #fef2f2;
+      background: linear-gradient(90deg, #fee2e2 0%, #fff 50%);
     }
 
     .commissions-table select {
@@ -393,14 +424,17 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
     }
 
     .pricing-card {
-      background: var(--bg);
+      background: #fff;
       padding: 1rem;
-      border-radius: 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .pricing-card h4 {
       margin-bottom: 0.75rem;
       color: var(--accent);
+      font-weight: 600;
     }
 
     .price-input {
@@ -423,10 +457,11 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
 
     /* Add Item Form */
     .add-item-form {
-      background: var(--bg);
+      background: linear-gradient(135deg, #f5f3ff 0%, #f8f9fc 100%);
       padding: 1.5rem;
-      border-radius: 8px;
+      border-radius: 12px;
       margin-bottom: 2rem;
+      border: 1px solid var(--border);
     }
 
     /* Commission Filters */
@@ -516,8 +551,16 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
     }
 
     .btn-view {
-      background: var(--accent) !important;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%) !important;
       white-space: nowrap;
+      font-weight: 500;
+      box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+      transition: all 0.2s !important;
+    }
+
+    .btn-view:hover {
+      box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3) !important;
+      transform: translateY(-1px);
     }
 
     .status-select {
@@ -651,19 +694,24 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
 
     /* Save Button */
     .btn-save {
-      background: var(--success);
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
       border: none;
       padding: 0.75rem 1.5rem;
       border-radius: 8px;
       font-size: 1rem;
+      font-weight: 500;
       cursor: pointer;
       width: 100%;
       margin-top: 1rem;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+      transition: all 0.2s;
     }
 
     .btn-save:hover {
-      background: #3d653d;
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+      transform: translateY(-1px);
     }
 
     @media (max-width: 768px) {
