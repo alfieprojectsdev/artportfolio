@@ -17,6 +17,18 @@ try {
 
   const [dbSettings] = await db.select().from(siteSettings).limit(1);
   settings = dbSettings || null;
+
+  // [DEBUGGER:index.astro:23] Log raw database value
+  if (settings?.artistName) {
+    const charCodes = settings.artistName.split('').map(c =>
+      `U+${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')}`
+    ).join(' ');
+    console.error(`[DEBUGGER:index.astro:23] Raw artistName from DB: "${settings.artistName}"`);
+    console.error(`[DEBUGGER:index.astro:23] Character codes: ${charCodes}`);
+    console.error(`[DEBUGGER:index.astro:23] Length: ${settings.artistName.length}`);
+  } else {
+    console.error(`[DEBUGGER:index.astro:23] artistName is: ${JSON.stringify(settings?.artistName)}`);
+  }
 } catch (error) {
   console.error('Database connection error:', error);
   // Continue with defaults if DB fails
@@ -35,12 +47,26 @@ const defaults = {
   chibiSketch: 40, chibiFlat: 100, chibiRendered: 150,
 };
 
+import { sanitizeString } from '../lib/utils';
+
+// Helper to ensure non-empty string values
+const getNonEmptyValue = (value: string | null | undefined, fallback: string): string => {
+  return (value && value.trim()) || fallback;
+};
+
+// [DEBUGGER:index.astro:50] Log sanitization process
+console.error(`[DEBUGGER:index.astro:50] Before sanitize: "${settings?.artistName}"`);
+const sanitizedArtistName = sanitizeString(settings?.artistName);
+console.error(`[DEBUGGER:index.astro:50] After sanitize: "${sanitizedArtistName}"`);
+console.error(`[DEBUGGER:index.astro:50] Will use: "${sanitizedArtistName || defaults.artistName}"`);
+
 const config = {
   ...defaults,
   ...settings,
-  // Ensure critical display fields have fallbacks even if DB has null
-  artistName: settings?.artistName || defaults.artistName,
-  commissionStatus: settings?.commissionStatus || defaults.commissionStatus,
+  // Ensure critical display fields have fallbacks for null, undefined, AND empty strings
+  // sanitizeString returns null if empty/invisible, triggering the Defaults fallback
+  artistName: sanitizedArtistName || defaults.artistName,
+  commissionStatus: sanitizeString(settings?.commissionStatus) || defaults.commissionStatus,
 };
 
 // Helper to convert PHP to USD (approximate)

@@ -2,6 +2,14 @@ import type { APIRoute } from 'astro';
 import { db, siteSettings } from '../../db';
 import { eq } from 'drizzle-orm';
 import { checkAuth, unauthorizedResponse } from '../../lib/auth';
+import { sanitizeString } from '../../lib/utils';
+
+const defaults = {
+  artistName: 'Bred',
+  bio: "Hello, I'm Bred! I'm a senior student doing commissions and art on the side. If you like my style, I'd love to work with you! :D",
+  instagram: 'demented.toast',
+  discord: 'toasted_insanity',
+};
 
 // GET /api/settings - Get site settings
 export const GET: APIRoute = async () => {
@@ -57,6 +65,36 @@ export const PUT: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
 
+    // [DEBUGGER:settings.ts:71] Log incoming value
+    console.error(`[DEBUGGER:settings.ts:71] Incoming artistName: "${body.artistName}"`);
+    if (body.artistName) {
+      const charCodes = body.artistName.split('').map(c =>
+        `U+${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')}`
+      ).join(' ');
+      console.error(`[DEBUGGER:settings.ts:71] Character codes: ${charCodes}`);
+    }
+
+    const sanitized = sanitizeString(body.artistName);
+    console.error(`[DEBUGGER:settings.ts:71] After sanitize: "${sanitized}"`);
+    console.error(`[DEBUGGER:settings.ts:71] Will save: "${sanitized || 'Bred'}"`);
+
+    // Validate and sanitize critical fields
+    const sanitizedBody = {
+      ...body,
+      artistName: sanitized || 'Bred',
+    };
+
+    // Validate artistName is not empty
+    if (!sanitizedBody.artistName || sanitizedBody.artistName.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Artist name is required and cannot be empty' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // Check if settings exist
     const [existing] = await db.select().from(siteSettings).limit(1);
 
@@ -65,14 +103,14 @@ export const PUT: APIRoute = async ({ request }) => {
       // Update existing
       [result] = await db
         .update(siteSettings)
-        .set({ ...body, updatedAt: new Date() })
+        .set({ ...sanitizedBody, updatedAt: new Date() })
         .where(eq(siteSettings.id, existing.id))
         .returning();
     } else {
       // Insert new
       [result] = await db
         .insert(siteSettings)
-        .values(body)
+        .values(sanitizedBody)
         .returning();
     }
 

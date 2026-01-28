@@ -597,12 +597,26 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
             <fieldset className="form-fieldset">
               <legend>Artist Profile</legend>
               <div className="form-group">
-                <label>Artist Name</label>
+                <label>Artist Name <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type="text"
                   value={settings.artistName || ''}
                   onChange={e => setSettings(prev => prev ? { ...prev, artistName: e.target.value } : null)}
+                  required
+                  minLength={1}
+                  placeholder="Enter your artist name"
+                  style={
+                    settings.artistName?.trim().length === 0
+                      ? { borderColor: '#ef4444', borderWidth: '2px' }
+                      : {}
+                  }
                 />
+                {settings.artistName?.trim().length === 0 && (
+                  <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '4px' }}>
+                    Artist name is required
+                  </p>
+                )}
+                <p className="field-hint">Your name will appear in the site title and header</p>
               </div>
 
               <div className="form-group">
@@ -665,7 +679,12 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
               </div>
             </fieldset>
 
-            <button type="submit">Save Settings</button>
+            <button
+              type="submit"
+              disabled={!settings.artistName || settings.artistName.trim().length === 0}
+            >
+              Save Settings
+            </button>
           </form>
         </div>
       )}
