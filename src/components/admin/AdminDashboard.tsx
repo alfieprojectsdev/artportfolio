@@ -359,23 +359,25 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
 
           <div className="gallery-list">
             <h3>Current Gallery Items</h3>
-            {galleryItems.map(item => (
-              <div key={item.id} className="gallery-list-item">
-                <img src={item.imageUrl.replace('/upload/', '/upload/w_100,h_100,c_fill/')} alt={item.altText || item.title} />
-                <div className="item-info">
-                  <strong>{item.title}</strong>
-                  <span className="separator" aria-hidden="true">|</span>
-                  <span className="category">{item.category}</span>
-                  {item.flatUrl && <span className="has-slider" title="Has before/after comparison">↔</span>}
+            <div className="gallery-list-container">
+              {galleryItems.map(item => (
+                <div key={item.id} className="gallery-list-item">
+                  <img src={item.imageUrl.replace('/upload/', '/upload/w_100,h_100,c_fill/')} alt={item.altText || item.title} />
+                  <div className="item-info">
+                    <strong>{item.title}</strong>
+                    <span className="separator" aria-hidden="true">|</span>
+                    <span className="category">{item.category}</span>
+                    {item.flatUrl && <span className="has-slider" title="Has before/after comparison">↔</span>}
+                  </div>
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDeleteGalleryItem(item.id)}
+                  >
+                    Delete
+                  </button>
                 </div>
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDeleteGalleryItem(item.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
