@@ -3,13 +3,29 @@ import { db, siteSettings } from '../../db';
 import { eq } from 'drizzle-orm';
 import { checkAuth, unauthorizedResponse } from '../../lib/auth';
 import { sanitizeString } from '../../lib/utils';
+import { z } from 'zod';
 
-const defaults = {
-  artistName: 'Bred',
-  bio: "Hello, I'm Bred! I'm a senior student doing commissions and art on the side. If you like my style, I'd love to work with you! :D",
-  instagram: 'demented.toast',
-  discord: 'toasted_insanity',
-};
+// Define schema for input validation to prevent mass assignment
+const updateSettingsSchema = z.object({
+  commissionStatus: z.enum(['open', 'closed', 'waitlist']).optional(),
+  artistName: z.string().optional(),
+  bio: z.string().nullable().optional(),
+  instagram: z.string().nullable().optional(),
+  discord: z.string().nullable().optional(),
+  // Pricing fields - coerce to number in case they come as strings
+  bustSketch: z.coerce.number().int().min(0).optional(),
+  bustFlat: z.coerce.number().int().min(0).optional(),
+  bustRendered: z.coerce.number().int().min(0).optional(),
+  halfSketch: z.coerce.number().int().min(0).optional(),
+  halfFlat: z.coerce.number().int().min(0).optional(),
+  halfRendered: z.coerce.number().int().min(0).optional(),
+  fullSketch: z.coerce.number().int().min(0).optional(),
+  fullFlat: z.coerce.number().int().min(0).optional(),
+  fullRendered: z.coerce.number().int().min(0).optional(),
+  chibiSketch: z.coerce.number().int().min(0).optional(),
+  chibiFlat: z.coerce.number().int().min(0).optional(),
+  chibiRendered: z.coerce.number().int().min(0).optional(),
+});
 
 // GET /api/settings - Get site settings
 export const GET: APIRoute = async () => {
@@ -65,35 +81,30 @@ export const PUT: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
 
-    // [DEBUGGER:settings.ts:71] Log incoming value
-    console.error(`[DEBUGGER:settings.ts:71] Incoming artistName: "${body.artistName}"`);
-    if (body.artistName) {
-      const charCodes = body.artistName.split('').map(c =>
-        `U+${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')}`
-      ).join(' ');
-      console.error(`[DEBUGGER:settings.ts:71] Character codes: ${charCodes}`);
-    }
+    // Validate request body against schema
+    const parseResult = updateSettingsSchema.safeParse(body);
 
-    const sanitized = sanitizeString(body.artistName);
-    console.error(`[DEBUGGER:settings.ts:71] After sanitize: "${sanitized}"`);
-    console.error(`[DEBUGGER:settings.ts:71] Will save: "${sanitized || 'Bred'}"`);
-
-    // Validate and sanitize critical fields
-    const sanitizedBody = {
-      ...body,
-      artistName: sanitized || 'Bred',
-    };
-
-    // Validate artistName is not empty
-    if (!sanitizedBody.artistName || sanitizedBody.artistName.length === 0) {
+    if (!parseResult.success) {
       return new Response(
-        JSON.stringify({ error: 'Artist name is required and cannot be empty' }),
+        JSON.stringify({ error: 'Invalid request data', details: parseResult.error.issues }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         }
       );
     }
+
+    const validatedData = parseResult.data;
+
+    // Sanitize artistName if present
+    const sanitizedName = sanitizeString(validatedData.artistName);
+
+    // Construct the update object with only allowed fields
+    const sanitizedBody = {
+      ...validatedData,
+      // Ensure artistName is always set to a valid string or default 'Bred'
+      artistName: sanitizedName || 'Bred',
+    };
 
     // Check if settings exist
     const [existing] = await db.select().from(siteSettings).limit(1);
