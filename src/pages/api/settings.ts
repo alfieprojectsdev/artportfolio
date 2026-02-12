@@ -64,19 +64,7 @@ export const PUT: APIRoute = async ({ request }) => {
 
   try {
     const body = await request.json();
-
-    // [DEBUGGER:settings.ts:71] Log incoming value
-    console.error(`[DEBUGGER:settings.ts:71] Incoming artistName: "${body.artistName}"`);
-    if (body.artistName) {
-      const charCodes = body.artistName.split('').map(c =>
-        `U+${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')}`
-      ).join(' ');
-      console.error(`[DEBUGGER:settings.ts:71] Character codes: ${charCodes}`);
-    }
-
     const sanitized = sanitizeString(body.artistName);
-    console.error(`[DEBUGGER:settings.ts:71] After sanitize: "${sanitized}"`);
-    console.error(`[DEBUGGER:settings.ts:71] Will save: "${sanitized || 'Bred'}"`);
 
     // Validate and sanitize critical fields
     const sanitizedBody = {
