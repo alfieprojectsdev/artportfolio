@@ -7,3 +7,12 @@ export function sanitizeString(value: string | null | undefined): string | null 
     const clean = value.replace(/[\u200B-\u200F\uFEFF]/g, '').trim();
     return clean.length > 0 ? clean : null;
 }
+
+export function escapeHtml(unsafe: string): string {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}

@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { escapeHtml } from './utils';
 
 // Lazy-initialize Resend client to avoid issues when API key is not set
 let resendClient: Resend | null = null;
@@ -48,9 +49,11 @@ export async function sendNewCommissionNotification(commission: CommissionEmailD
     const refImagesHtml = commission.refImages && commission.refImages.length > 0
       ? `<p><strong>Reference Images:</strong> ${commission.refImages.length} attached</p>
          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-           ${commission.refImages.map(url =>
-             `<a href="${url}" target="_blank"><img src="${url.replace('/upload/', '/upload/w_100,h_100,c_fill/')}" alt="Reference" style="border-radius: 8px;"></a>`
-           ).join('')}
+           ${commission.refImages.map(url => {
+             const escapedUrl = escapeHtml(url);
+             const optimizedUrl = escapeHtml(url.replace('/upload/', '/upload/w_100,h_100,c_fill/'));
+             return `<a href="${escapedUrl}" target="_blank"><img src="${optimizedUrl}" alt="Reference" style="border-radius: 8px;"></a>`;
+           }).join('')}
          </div>`
       : '';
 
@@ -64,21 +67,21 @@ export async function sendNewCommissionNotification(commission: CommissionEmailD
 
           <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
             <h2 style="margin-top: 0; color: #333;">Client Information</h2>
-            <p><strong>Name:</strong> ${commission.clientName}</p>
-            <p><strong>Email:</strong> <a href="mailto:${commission.email}">${commission.email}</a></p>
-            ${commission.discord ? `<p><strong>Discord:</strong> ${commission.discord}</p>` : ''}
+            <p><strong>Name:</strong> ${escapeHtml(commission.clientName)}</p>
+            <p><strong>Email:</strong> <a href="mailto:${escapeHtml(commission.email)}">${escapeHtml(commission.email)}</a></p>
+            ${commission.discord ? `<p><strong>Discord:</strong> ${escapeHtml(commission.discord)}</p>` : ''}
           </div>
 
           <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
             <h2 style="margin-top: 0; color: #333;">Commission Details</h2>
-            <p><strong>Type:</strong> ${commission.artType}</p>
-            ${commission.style ? `<p><strong>Style:</strong> ${commission.style}</p>` : ''}
+            <p><strong>Type:</strong> ${escapeHtml(commission.artType)}</p>
+            ${commission.style ? `<p><strong>Style:</strong> ${escapeHtml(commission.style)}</p>` : ''}
             ${commission.estimatedPrice ? `<p><strong>Estimated Price:</strong> ₱${commission.estimatedPrice}</p>` : ''}
           </div>
 
           <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
             <h2 style="margin-top: 0; color: #333;">Description</h2>
-            <p style="white-space: pre-wrap;">${commission.description}</p>
+            <p style="white-space: pre-wrap;">${escapeHtml(commission.description)}</p>
           </div>
 
           ${refImagesHtml}
@@ -129,18 +132,18 @@ export async function sendCommissionConfirmation(commission: CommissionEmailData
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #916A5D; margin-bottom: 20px;">Thank you for your commission request!</h1>
 
-          <p>Hi ${commission.clientName},</p>
+          <p>Hi ${escapeHtml(commission.clientName)},</p>
 
           <p>I've received your commission request and will review it soon. Here's a summary of what you submitted:</p>
 
           <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin: 20px 0;">
-            <p><strong>Type:</strong> ${commission.artType}</p>
-            ${commission.style ? `<p><strong>Style:</strong> ${commission.style}</p>` : ''}
+            <p><strong>Type:</strong> ${escapeHtml(commission.artType)}</p>
+            ${commission.style ? `<p><strong>Style:</strong> ${escapeHtml(commission.style)}</p>` : ''}
             ${commission.estimatedPrice ? `<p><strong>Estimated Price:</strong> ₱${commission.estimatedPrice} (~$${Math.round(commission.estimatedPrice / 56)} USD)</p>` : ''}
           </div>
 
           <p><strong>Your request:</strong></p>
-          <p style="background: #f5f5f5; padding: 15px; border-radius: 8px; white-space: pre-wrap;">${commission.description}</p>
+          <p style="background: #f5f5f5; padding: 15px; border-radius: 8px; white-space: pre-wrap;">${escapeHtml(commission.description)}</p>
 
           <p style="margin-top: 20px;">I typically respond within <strong>1-3 business days</strong>. If your request is accepted, I'll reach out to discuss the details and payment.</p>
 
@@ -223,14 +226,14 @@ export async function sendStatusUpdateEmail(
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #916A5D; margin-bottom: 20px;">${statusInfo.subject}</h1>
 
-          <p>Hi ${clientName},</p>
+          <p>Hi ${escapeHtml(clientName)},</p>
 
           <p>${statusInfo.message}</p>
 
           ${notes ? `
           <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <strong>Note from Bred:</strong>
-            <p style="margin: 10px 0 0;">${notes}</p>
+            <p style="margin: 10px 0 0;">${escapeHtml(notes)}</p>
           </div>
           ` : ''}
 
