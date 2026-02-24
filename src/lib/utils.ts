@@ -16,3 +16,9 @@ export function escapeHtml(unsafe: string): string {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+export const PHP_TO_USD_RATE = 56;
+
+export function convertPhpToUsd(phpAmount: number): number {
+    return Math.round(phpAmount / PHP_TO_USD_RATE);
+}
