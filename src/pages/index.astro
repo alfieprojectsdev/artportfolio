@@ -532,12 +532,15 @@ const categories = galleryItems.length > 0
 
   <script is:inline>
     // Gallery filtering
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const galleryItems = document.querySelectorAll('.gallery-item');
+
+    filterBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const filter = btn.dataset.filter;
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        filterBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        document.querySelectorAll('.gallery-item').forEach(item => {
+        galleryItems.forEach(item => {
           item.classList.toggle('hidden', filter !== 'all' && item.dataset.category !== filter);
         });
       });
