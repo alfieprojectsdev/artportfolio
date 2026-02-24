@@ -1,43 +1,50 @@
-/**
- * Authentication utility for admin API endpoints.
- * Implements Basic Auth matching the pattern used in admin.astro.
- */
+import { verifySessionToken, SESSION_COOKIE_NAME } from './session';
 
 /**
- * Checks if a request has valid Basic Auth credentials.
+ * Checks if a request has a valid session cookie.
  * @param request - The incoming Request object
  * @returns true if authenticated, false otherwise
  */
 export function checkAuth(request: Request): boolean {
-  const authHeader = request.headers.get('authorization');
+  const cookieHeader = request.headers.get('cookie');
+  if (!cookieHeader) return false;
 
-  if (!authHeader) {
-    return false;
-  }
+  const cookies = parseCookies(cookieHeader);
+  const token = cookies[SESSION_COOKIE_NAME];
 
-  const [type, credentials] = authHeader.split(' ');
+  if (!token) return false;
 
-  if (type !== 'Basic' || !credentials) {
-    return false;
-  }
-
-  try {
-    const decoded = atob(credentials);
-    const [username, password] = decoded.split(':');
-    return username === 'admin' && password === import.meta.env.ADMIN_PASSWORD;
-  } catch {
-    // Invalid base64 encoding
-    return false;
-  }
+  return !!verifySessionToken(token);
 }
 
 /**
- * Creates a 401 Unauthorized response with WWW-Authenticate header.
+ * Simple cookie parser for the Cookie header string.
+ */
+function parseCookies(header: string): Record<string, string> {
+  const list: Record<string, string> = {};
+  header.split(';').forEach((cookie) => {
+    const parts = cookie.split('=');
+    const name = parts.shift()?.trim();
+    const value = parts.join('=')?.trim(); // Handle values with '='
+    if (name && value) {
+      try {
+        list[name] = decodeURIComponent(value);
+      } catch (e) {
+        // Ignore malformed cookies
+        list[name] = value;
+      }
+    }
+  });
+  return list;
+}
+
+/**
+ * Creates a 401 Unauthorized response.
  * @returns Response object with 401 status
  */
 export function unauthorizedResponse(): Response {
-  return new Response('Unauthorized', {
+  return new Response(JSON.stringify({ error: 'Unauthorized' }), {
     status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="Admin API"' },
+    headers: { 'Content-Type': 'application/json' },
   });
 }

@@ -1,28 +1,10 @@
 ---
 import AdminDashboard from '../components/admin/AdminDashboard';
+import { checkAuth } from '../lib/auth';
 
-// Basic auth check
-const authHeader = Astro.request.headers.get('authorization');
-let isAuthenticated = false;
-
-if (authHeader) {
-  const [type, credentials] = authHeader.split(' ');
-  if (type === 'Basic') {
-    const decoded = atob(credentials);
-    const [username, password] = decoded.split(':');
-    // Check against environment variable
-    isAuthenticated = username === 'admin' && password === import.meta.env.ADMIN_PASSWORD;
-  }
-}
-
-// If not authenticated, return 401 with WWW-Authenticate header
-if (!isAuthenticated) {
-  return new Response('Unauthorized', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': 'Basic realm="Admin Area"',
-    },
-  });
+// Check for session cookie
+if (!checkAuth(Astro.request)) {
+  return Astro.redirect('/login');
 }
 
 const cloudName = import.meta.env.CLOUDINARY_CLOUD_NAME;
@@ -788,7 +770,10 @@ const uploadPreset = import.meta.env.CLOUDINARY_UPLOAD_PRESET;
 <body>
   <header class="admin-header">
     <h1>Bred's Portfolio Admin</h1>
-    <a href="/" target="_blank">View Site &rarr;</a>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <a href="/" target="_blank">View Site &rarr;</a>
+      <a href="/api/auth/logout" style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.9rem;">Logout</a>
+    </div>
   </header>
 
   <AdminDashboard
