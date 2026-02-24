@@ -73,9 +73,11 @@ const config = {
 const toUsd = (php: number) => Math.round(php / 56);
 
 // Get unique categories from gallery items
-const categories = galleryItems.length > 0
-  ? ['all', ...new Set(galleryItems.map(item => item.category))]
-  : ['all'];
+const categorySet = new Set<string>(['all']);
+for (let i = 0; i < galleryItems.length; i++) {
+  categorySet.add(galleryItems[i].category);
+}
+const categories = Array.from(categorySet);
 ---
 
 <!DOCTYPE html>
