@@ -47,7 +47,7 @@ const defaults = {
   chibiSketch: 40, chibiFlat: 100, chibiRendered: 150,
 };
 
-import { sanitizeString } from '../lib/utils';
+import { sanitizeString, toUsd } from '../lib/utils';
 
 // Helper to ensure non-empty string values
 const getNonEmptyValue = (value: string | null | undefined, fallback: string): string => {
@@ -68,9 +68,6 @@ const config = {
   artistName: sanitizedArtistName || defaults.artistName,
   commissionStatus: sanitizeString(settings?.commissionStatus) || defaults.commissionStatus,
 };
-
-// Helper to convert PHP to USD (approximate)
-const toUsd = (php: number) => Math.round(php / 56);
 
 // Get unique categories from gallery items
 const categories = galleryItems.length > 0

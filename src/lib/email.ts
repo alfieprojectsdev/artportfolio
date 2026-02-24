@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { escapeHtml } from './utils';
+import { escapeHtml, toUsd } from './utils';
 
 // Lazy-initialize Resend client to avoid issues when API key is not set
 let resendClient: Resend | null = null;
@@ -139,7 +139,7 @@ export async function sendCommissionConfirmation(commission: CommissionEmailData
           <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin: 20px 0;">
             <p><strong>Type:</strong> ${escapeHtml(commission.artType)}</p>
             ${commission.style ? `<p><strong>Style:</strong> ${escapeHtml(commission.style)}</p>` : ''}
-            ${commission.estimatedPrice ? `<p><strong>Estimated Price:</strong> ₱${commission.estimatedPrice} (~$${Math.round(commission.estimatedPrice / 56)} USD)</p>` : ''}
+            ${commission.estimatedPrice ? `<p><strong>Estimated Price:</strong> ₱${commission.estimatedPrice} (~$${toUsd(commission.estimatedPrice)} USD)</p>` : ''}
           </div>
 
           <p><strong>Your request:</strong></p>

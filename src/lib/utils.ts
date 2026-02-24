@@ -16,3 +16,5 @@ export function escapeHtml(unsafe: string): string {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+export const toUsd = (php: number): number => Math.round(php / 56);
