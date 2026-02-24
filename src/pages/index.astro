@@ -9,13 +9,17 @@ let galleryItems: typeof portfolioItems.$inferSelect[] = [];
 let settings: typeof siteSettings.$inferSelect | null = null;
 
 try {
-  galleryItems = await db
-    .select()
-    .from(portfolioItems)
-    .where(eq(portfolioItems.featured, true))
-    .orderBy(desc(portfolioItems.displayOrder), desc(portfolioItems.createdAt));
+  const [galleryResult, settingsResult] = await Promise.all([
+    db
+      .select()
+      .from(portfolioItems)
+      .where(eq(portfolioItems.featured, true))
+      .orderBy(desc(portfolioItems.displayOrder), desc(portfolioItems.createdAt)),
+    db.select().from(siteSettings).limit(1),
+  ]);
 
-  const [dbSettings] = await db.select().from(siteSettings).limit(1);
+  galleryItems = galleryResult;
+  const [dbSettings] = settingsResult;
   settings = dbSettings || null;
 
   // [DEBUGGER:index.astro:23] Log raw database value

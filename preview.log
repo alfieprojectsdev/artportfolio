@@ -1,0 +1,10 @@
+
+> astro-cms@0.0.1 preview
+> astro preview
+
+[preview] The @astrojs/vercel adapter does not support the preview command.
+  Location:
+    /app/node_modules/astro/dist/core/preview/index.js:44:11
+  Stack trace:
+    at preview (file:///app/node_modules/astro/dist/core/preview/index.js:44:11)
+    at async runCommand (file:///app/node_modules/astro/dist/cli/index.js:215:22)
