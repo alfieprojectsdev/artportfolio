@@ -1,3 +1,9 @@
+export const USD_TO_PHP_RATE = 56;
+
+export function convertPhpToUsd(php: number): number {
+    return Math.round(php / USD_TO_PHP_RATE);
+}
+
 export function sanitizeString(value: string | null | undefined): string | null {
     if (!value) return null;
     // Remove zero-width spaces, other invisible characters, and trim whitespace

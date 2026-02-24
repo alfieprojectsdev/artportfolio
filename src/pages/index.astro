@@ -47,7 +47,7 @@ const defaults = {
   chibiSketch: 40, chibiFlat: 100, chibiRendered: 150,
 };
 
-import { sanitizeString } from '../lib/utils';
+import { sanitizeString, convertPhpToUsd } from '../lib/utils';
 
 // Helper to ensure non-empty string values
 const getNonEmptyValue = (value: string | null | undefined, fallback: string): string => {
@@ -68,9 +68,6 @@ const config = {
   artistName: sanitizedArtistName || defaults.artistName,
   commissionStatus: sanitizeString(settings?.commissionStatus) || defaults.commissionStatus,
 };
-
-// Helper to convert PHP to USD (approximate)
-const toUsd = (php: number) => Math.round(php / 56);
 
 // Get unique categories from gallery items
 const categories = galleryItems.length > 0
@@ -426,33 +423,33 @@ const categories = galleryItems.length > 0
         <div class="price-card">
           <h3>Bust / Headshot</h3>
           <ul>
-            <li><strong>Sketch:</strong> ₱{config.bustSketch} | ${toUsd(config.bustSketch!)}</li>
-            <li><strong>Flat:</strong> ₱{config.bustFlat} | ${toUsd(config.bustFlat!)}</li>
-            <li><strong>Rendered:</strong> ₱{config.bustRendered} | ${toUsd(config.bustRendered!)}</li>
+            <li><strong>Sketch:</strong> ₱{config.bustSketch} | ${convertPhpToUsd(config.bustSketch!)}</li>
+            <li><strong>Flat:</strong> ₱{config.bustFlat} | ${convertPhpToUsd(config.bustFlat!)}</li>
+            <li><strong>Rendered:</strong> ₱{config.bustRendered} | ${convertPhpToUsd(config.bustRendered!)}</li>
           </ul>
         </div>
         <div class="price-card">
           <h3>Half Body</h3>
           <ul>
-            <li><strong>Sketch:</strong> ₱{config.halfSketch} | ${toUsd(config.halfSketch!)}</li>
-            <li><strong>Flat:</strong> ₱{config.halfFlat} | ${toUsd(config.halfFlat!)}</li>
-            <li><strong>Rendered:</strong> ₱{config.halfRendered} | ${toUsd(config.halfRendered!)}</li>
+            <li><strong>Sketch:</strong> ₱{config.halfSketch} | ${convertPhpToUsd(config.halfSketch!)}</li>
+            <li><strong>Flat:</strong> ₱{config.halfFlat} | ${convertPhpToUsd(config.halfFlat!)}</li>
+            <li><strong>Rendered:</strong> ₱{config.halfRendered} | ${convertPhpToUsd(config.halfRendered!)}</li>
           </ul>
         </div>
         <div class="price-card">
           <h3>Full Body</h3>
           <ul>
-            <li><strong>Sketch:</strong> ₱{config.fullSketch} | ${toUsd(config.fullSketch!)}</li>
-            <li><strong>Flat:</strong> ₱{config.fullFlat} | ${toUsd(config.fullFlat!)}</li>
-            <li><strong>Rendered:</strong> ₱{config.fullRendered} | ${toUsd(config.fullRendered!)}</li>
+            <li><strong>Sketch:</strong> ₱{config.fullSketch} | ${convertPhpToUsd(config.fullSketch!)}</li>
+            <li><strong>Flat:</strong> ₱{config.fullFlat} | ${convertPhpToUsd(config.fullFlat!)}</li>
+            <li><strong>Rendered:</strong> ₱{config.fullRendered} | ${convertPhpToUsd(config.fullRendered!)}</li>
           </ul>
         </div>
         <div class="price-card">
           <h3>Chibi Style</h3>
           <ul>
-            <li><strong>Sketch:</strong> ₱{config.chibiSketch} | ${toUsd(config.chibiSketch!)}</li>
-            <li><strong>Flat:</strong> ₱{config.chibiFlat} | ${toUsd(config.chibiFlat!)}</li>
-            <li><strong>Rendered:</strong> ₱{config.chibiRendered} | ${toUsd(config.chibiRendered!)}</li>
+            <li><strong>Sketch:</strong> ₱{config.chibiSketch} | ${convertPhpToUsd(config.chibiSketch!)}</li>
+            <li><strong>Flat:</strong> ₱{config.chibiFlat} | ${convertPhpToUsd(config.chibiFlat!)}</li>
+            <li><strong>Rendered:</strong> ₱{config.chibiRendered} | ${convertPhpToUsd(config.chibiRendered!)}</li>
           </ul>
         </div>
       </div>

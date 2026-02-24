@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { actions } from 'astro:actions';
 import { PRICING, type ArtType, type Style } from '../lib/schemas';
+import { convertPhpToUsd } from '../lib/utils';
 
 interface CommissionFormProps {
   cloudName: string;
@@ -24,7 +25,7 @@ export default function CommissionForm({ cloudName, uploadPreset, isOpen }: Comm
 
   // Calculate estimated price
   const estimatedPrice = PRICING[formData.artType][formData.style];
-  const estimatedUsd = Math.round(estimatedPrice / 56);
+  const estimatedUsd = convertPhpToUsd(estimatedPrice);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
