@@ -38,6 +38,6 @@ export function checkAuth(request: Request): boolean {
 export function unauthorizedResponse(): Response {
   return new Response('Unauthorized', {
     status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="Admin API"' },
+    headers: { 'WWW-Authenticate': 'Basic realm="Admin Area"' },
   });
 }
