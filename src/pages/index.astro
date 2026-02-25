@@ -616,7 +616,16 @@ const categories = galleryItems.length > 0
       heroBottom = heroSection ? heroSection.offsetTop + heroSection.offsetHeight : 300;
     });
 
-    window.addEventListener('scroll', updateScrollElements);
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updateScrollElements();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
     updateScrollElements(); // Initial check
 
     // Back to top click handler
