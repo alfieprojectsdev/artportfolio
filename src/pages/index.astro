@@ -18,17 +18,6 @@ try {
   const [dbSettings] = await db.select().from(siteSettings).limit(1);
   settings = dbSettings || null;
 
-  // [DEBUGGER:index.astro:23] Log raw database value
-  if (settings?.artistName) {
-    const charCodes = settings.artistName.split('').map(c =>
-      `U+${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')}`
-    ).join(' ');
-    console.error(`[DEBUGGER:index.astro:23] Raw artistName from DB: "${settings.artistName}"`);
-    console.error(`[DEBUGGER:index.astro:23] Character codes: ${charCodes}`);
-    console.error(`[DEBUGGER:index.astro:23] Length: ${settings.artistName.length}`);
-  } else {
-    console.error(`[DEBUGGER:index.astro:23] artistName is: ${JSON.stringify(settings?.artistName)}`);
-  }
 } catch (error) {
   console.error('Database connection error:', error);
   // Continue with defaults if DB fails
@@ -54,11 +43,7 @@ const getNonEmptyValue = (value: string | null | undefined, fallback: string): s
   return (value && value.trim()) || fallback;
 };
 
-// [DEBUGGER:index.astro:50] Log sanitization process
-console.error(`[DEBUGGER:index.astro:50] Before sanitize: "${settings?.artistName}"`);
 const sanitizedArtistName = sanitizeString(settings?.artistName);
-console.error(`[DEBUGGER:index.astro:50] After sanitize: "${sanitizedArtistName}"`);
-console.error(`[DEBUGGER:index.astro:50] Will use: "${sanitizedArtistName || defaults.artistName}"`);
 
 const config = {
   ...defaults,
