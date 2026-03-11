@@ -1,6 +1,5 @@
 import type { APIRoute } from 'astro';
 import { db, siteSettings } from '../../db';
-import { eq } from 'drizzle-orm';
 import { checkAuth, unauthorizedResponse } from '../../lib/auth';
 import { sanitizeString } from '../../lib/utils';
 
@@ -84,24 +83,19 @@ export const PUT: APIRoute = async ({ request }) => {
       );
     }
 
-    // Check if settings exist
-    const [existing] = await db.select().from(siteSettings).limit(1);
+    // Perform atomic upsert (Postgres ON CONFLICT)
+    // We target the settings ID to ensure a single row config
+    const { id, ...values } = sanitizedBody;
+    const finalValues = { ...values, updatedAt: new Date() };
 
-    let result;
-    if (existing) {
-      // Update existing
-      [result] = await db
-        .update(siteSettings)
-        .set({ ...sanitizedBody, updatedAt: new Date() })
-        .where(eq(siteSettings.id, existing.id))
-        .returning();
-    } else {
-      // Insert new
-      [result] = await db
-        .insert(siteSettings)
-        .values(sanitizedBody)
-        .returning();
-    }
+    const [result] = await db
+      .insert(siteSettings)
+      .values({ ...finalValues, id: (id && id > 0) ? id : 1 })
+      .onConflictDoUpdate({
+        target: siteSettings.id,
+        set: finalValues,
+      })
+      .returning();
 
     return new Response(JSON.stringify(result), {
       status: 200,
