@@ -1,28 +1,10 @@
 ---
 import AdminDashboard from '../components/admin/AdminDashboard';
+import { checkAuth, unauthorizedResponse } from '../lib/auth';
 
 // Basic auth check
-const authHeader = Astro.request.headers.get('authorization');
-let isAuthenticated = false;
-
-if (authHeader) {
-  const [type, credentials] = authHeader.split(' ');
-  if (type === 'Basic') {
-    const decoded = atob(credentials);
-    const [username, password] = decoded.split(':');
-    // Check against environment variable
-    isAuthenticated = username === 'admin' && password === import.meta.env.ADMIN_PASSWORD;
-  }
-}
-
-// If not authenticated, return 401 with WWW-Authenticate header
-if (!isAuthenticated) {
-  return new Response('Unauthorized', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': 'Basic realm="Admin Area"',
-    },
-  });
+if (!checkAuth(Astro.request)) {
+  return unauthorizedResponse();
 }
 
 const cloudName = import.meta.env.CLOUDINARY_CLOUD_NAME;

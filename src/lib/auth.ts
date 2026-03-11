@@ -33,11 +33,12 @@ export function checkAuth(request: Request): boolean {
 
 /**
  * Creates a 401 Unauthorized response with WWW-Authenticate header.
+ * @param realm - The realm to display in the browser prompt (default: "Admin Area")
  * @returns Response object with 401 status
  */
-export function unauthorizedResponse(): Response {
+export function unauthorizedResponse(realm: string = "Admin Area"): Response {
   return new Response('Unauthorized', {
     status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="Admin API"' },
+    headers: { 'WWW-Authenticate': `Basic realm="${realm}"` },
   });
 }
