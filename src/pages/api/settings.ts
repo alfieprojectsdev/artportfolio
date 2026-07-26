@@ -2,57 +2,32 @@ import type { APIRoute } from 'astro';
 import { db, siteSettings } from '../../db';
 import { eq } from 'drizzle-orm';
 import { checkAuth, unauthorizedResponse } from '../../lib/auth';
-import { sanitizeString } from '../../lib/utils';
+import { cleanText } from '../../lib/utils';
+import { DEFAULT_SITE_SETTINGS } from '../../lib/settings';
+import { SiteSettingsUpdateSchema, type SiteSettingsUpdate } from '../../lib/schemas';
 
-const defaults = {
-  artistName: 'Bred',
-  bio: "Hello, I'm Bred! I'm a senior student doing commissions and art on the side. If you like my style, I'd love to work with you! :D",
-  instagram: 'demented.toast',
-  discord: 'toasted_insanity',
-};
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 
-// GET /api/settings - Get site settings
+/** Optional free-text columns that need whitespace/quote repair before storage. */
+const NULLABLE_TEXT_FIELDS = ['bio', 'instagram', 'discord'] as const;
+
+// GET /api/settings - Get site settings (public: no PII on this row)
 export const GET: APIRoute = async () => {
   try {
     const [settings] = await db.select().from(siteSettings).limit(1);
 
-    // If no settings exist, return defaults
     if (!settings) {
-      return new Response(JSON.stringify({
-        id: 0,
-        commissionStatus: 'open',
-        artistName: 'Bred',
-        bio: "Hello, I'm Bred! I'm a senior student doing commissions and art on the side.",
-        instagram: 'demented.toast',
-        discord: 'toasted_insanity',
-        bustSketch: 80,
-        bustFlat: 150,
-        bustRendered: 200,
-        halfSketch: 100,
-        halfFlat: 200,
-        halfRendered: 300,
-        fullSketch: 200,
-        fullFlat: 250,
-        fullRendered: 500,
-        chibiSketch: 40,
-        chibiFlat: 100,
-        chibiRendered: 150,
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return json({ id: 0, ...DEFAULT_SITE_SETTINGS });
     }
 
-    return new Response(JSON.stringify(settings), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json(settings);
   } catch (error) {
     console.error('Error fetching settings:', error);
-    return new Response(JSON.stringify({ error: 'Failed to fetch settings' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ error: 'Failed to fetch settings' }, 500);
   }
 };
 
@@ -65,53 +40,57 @@ export const PUT: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
 
-    const sanitized = sanitizeString(body.artistName);
+    // Validate against an explicit allowlist. Anything not in the schema (id,
+    // updatedAt, unknown columns) is dropped rather than written straight to
+    // the row, matching the pattern the gallery/commission routes use.
+    const parsed = SiteSettingsUpdateSchema.safeParse(body);
 
-    // Validate and sanitize critical fields
-    const sanitizedBody = {
-      ...body,
-      artistName: sanitized || 'Bred',
-    };
-
-    // Validate artistName is not empty
-    if (!sanitizedBody.artistName || sanitizedBody.artistName.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Artist name is required and cannot be empty' }),
+    if (!parsed.success) {
+      return json(
         {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+          error: 'Invalid settings payload',
+          fields: parsed.error.flatten().fieldErrors,
+        },
+        400
       );
     }
 
-    // Check if settings exist
+    const updates: SiteSettingsUpdate = { ...parsed.data };
+
+    // artistName drives the page title and header; never store it blank.
+    if (updates.artistName !== undefined) {
+      const artistName = cleanText(updates.artistName);
+      if (!artistName) {
+        return json({ error: 'Artist name is required and cannot be empty' }, 400);
+      }
+      updates.artistName = artistName;
+    }
+
+    for (const field of NULLABLE_TEXT_FIELDS) {
+      if (updates[field] !== undefined) {
+        updates[field] = cleanText(updates[field]);
+      }
+    }
+
     const [existing] = await db.select().from(siteSettings).limit(1);
 
     let result;
     if (existing) {
-      // Update existing
       [result] = await db
         .update(siteSettings)
-        .set({ ...sanitizedBody, updatedAt: new Date() })
+        .set({ ...updates, updatedAt: new Date() })
         .where(eq(siteSettings.id, existing.id))
         .returning();
     } else {
-      // Insert new
       [result] = await db
         .insert(siteSettings)
-        .values(sanitizedBody)
+        .values({ ...DEFAULT_SITE_SETTINGS, ...updates })
         .returning();
     }
 
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json(result);
   } catch (error) {
     console.error('Error updating settings:', error);
-    return new Response(JSON.stringify({ error: 'Failed to update settings' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ error: 'Failed to update settings' }, 500);
   }
 };
