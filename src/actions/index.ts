@@ -1,7 +1,6 @@
 import { defineAction } from 'astro:actions';
-import { z } from 'zod';
-import { db, commissionRequests } from '../db';
-import { CommissionRequestSchema, calculateEstimatedPrice } from '../lib/schemas';
+import { db, commissionRequests, siteSettings } from '../db';
+import { CommissionRequestSchema, calculateEstimatedPrice, pricingFromSettings } from '../lib/schemas';
 import { sendNewCommissionNotification, sendCommissionConfirmation } from '../lib/email';
 
 export const server = {
@@ -10,8 +9,14 @@ export const server = {
     input: CommissionRequestSchema,
     handler: async (input) => {
       try {
-        // Calculate estimated price
-        const estimatedPrice = calculateEstimatedPrice(input.artType, input.style);
+        // Price from the live settings row, so admin price edits take effect
+        // immediately. Falls back to DEFAULT_PRICING if the row is missing.
+        const [settings] = await db.select().from(siteSettings).limit(1);
+        const estimatedPrice = calculateEstimatedPrice(
+          input.artType,
+          input.style,
+          pricingFromSettings(settings)
+        );
 
         // Insert into database
         const [newRequest] = await db

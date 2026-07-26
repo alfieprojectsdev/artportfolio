@@ -1,14 +1,26 @@
 import { useState, useCallback } from 'react';
 import { actions } from 'astro:actions';
-import { PRICING, type ArtType, type Style } from '../lib/schemas';
+import { DEFAULT_PRICING, type ArtType, type PricingTable, type Style } from '../lib/schemas';
+import { phpToUsd } from '../lib/utils';
 
 interface CommissionFormProps {
   cloudName: string;
   uploadPreset: string;
   isOpen: boolean; // Commission status from site settings
+  /**
+   * Live prices from site_settings, passed down from the page. The estimate
+   * shown here and the estimate stored by the action read the same table, so
+   * editing prices in the admin dashboard updates both.
+   */
+  pricing?: PricingTable;
 }
 
-export default function CommissionForm({ cloudName, uploadPreset, isOpen }: CommissionFormProps) {
+export default function CommissionForm({
+  cloudName,
+  uploadPreset,
+  isOpen,
+  pricing = DEFAULT_PRICING,
+}: CommissionFormProps) {
   const [formData, setFormData] = useState({
     clientName: '',
     email: '',
@@ -23,8 +35,8 @@ export default function CommissionForm({ cloudName, uploadPreset, isOpen }: Comm
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Calculate estimated price
-  const estimatedPrice = PRICING[formData.artType][formData.style];
-  const estimatedUsd = Math.round(estimatedPrice / 56);
+  const estimatedPrice = pricing[formData.artType][formData.style];
+  const estimatedUsd = phpToUsd(estimatedPrice);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -203,13 +215,13 @@ export default function CommissionForm({ cloudName, uploadPreset, isOpen }: Comm
             onChange={handleInputChange}
             required
           >
-            <option value="headshot">Headshot</option>
             <option value="bust">Bust</option>
             <option value="half">Half Body</option>
             <option value="full">Full Body</option>
             <option value="chibi">Chibi</option>
             <option value="custom">Custom (Quote Required)</option>
           </select>
+          {errors.artType && <span className="field-error">{errors.artType}</span>}
         </div>
 
         <div className="form-group">
@@ -225,6 +237,7 @@ export default function CommissionForm({ cloudName, uploadPreset, isOpen }: Comm
             <option value="flat">Flat Color</option>
             <option value="rendered">Fully Rendered</option>
           </select>
+          {errors.style && <span className="field-error">{errors.style}</span>}
         </div>
       </div>
 
@@ -268,6 +281,7 @@ export default function CommissionForm({ cloudName, uploadPreset, isOpen }: Comm
           )}
         </div>
         <p className="field-hint">Upload character references, color palettes, or inspiration images</p>
+        {errors.refImages && <span className="field-error">{errors.refImages}</span>}
       </div>
 
       <button type="submit" disabled={isSubmitting} className="submit-btn">
