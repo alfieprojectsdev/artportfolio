@@ -47,17 +47,16 @@ test.describe('Commission Form', () => {
   test.describe('Art Type Options', () => {
     test('has all art type options', async ({ page }) => {
       const artType = page.locator('#artType');
-      await expect(artType.locator('option')).toHaveCount(6);
+      await expect(artType.locator('option')).toHaveCount(5);
     });
 
     test('has correct art type values', async ({ page }) => {
       const options = page.locator('#artType option');
-      await expect(options.nth(0)).toHaveText('Headshot');
-      await expect(options.nth(1)).toHaveText('Bust');
-      await expect(options.nth(2)).toHaveText('Half Body');
-      await expect(options.nth(3)).toHaveText('Full Body');
-      await expect(options.nth(4)).toHaveText('Chibi');
-      await expect(options.nth(5)).toHaveText('Custom (Quote Required)');
+      await expect(options.nth(0)).toHaveText('Bust');
+      await expect(options.nth(1)).toHaveText('Half Body');
+      await expect(options.nth(2)).toHaveText('Full Body');
+      await expect(options.nth(3)).toHaveText('Chibi');
+      await expect(options.nth(4)).toHaveText('Custom (Quote Required)');
     });
   });
 
@@ -88,8 +87,8 @@ test.describe('Commission Form', () => {
       // Default is bust + flat = 150
       await expect(priceEstimate).toContainText('₱150');
 
-      // Change to headshot
-      await page.selectOption('#artType', 'headshot');
+      // Change to chibi
+      await page.selectOption('#artType', 'chibi');
       await expect(priceEstimate).toContainText('₱100');
 
       // Change to full body

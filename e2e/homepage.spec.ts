@@ -52,7 +52,7 @@ test.describe('Homepage', () => {
     test('displays correct price card types', async ({ page }) => {
       await page.goto('/');
       const cardTitles = page.locator('.price-card h3');
-      await expect(cardTitles.nth(0)).toHaveText('Bust / Headshot');
+      await expect(cardTitles.nth(0)).toHaveText('Bust');
       await expect(cardTitles.nth(1)).toHaveText('Half Body');
       await expect(cardTitles.nth(2)).toHaveText('Full Body');
       await expect(cardTitles.nth(3)).toHaveText('Chibi Style');

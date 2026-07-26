@@ -75,7 +75,10 @@ test.describe('Admin Settings Management', () => {
     });
 
     test('Commission Status dropdown exists', async () => {
-      const label = page.locator('.settings-form .form-group label', { hasText: 'Commission Status' });
+      const fieldset = page.locator('fieldset.form-fieldset:has(legend:has-text("Commission Status"))');
+      await expect(fieldset).toBeVisible();
+
+      const label = fieldset.locator('.form-group label', { hasText: 'Current Status' });
       await expect(label).toBeVisible();
 
       const select = page.locator('.settings-form .form-group select').first();
@@ -133,7 +136,7 @@ test.describe('Admin Settings Management', () => {
 
   test.describe('Pricing Grid', () => {
     test('Pricing section heading exists', async () => {
-      const heading = page.locator('.settings-form h3', { hasText: 'Pricing (PHP)' });
+      const heading = page.locator('.settings-form fieldset.form-fieldset legend', { hasText: 'Pricing (PHP)' });
       await expect(heading).toBeVisible();
     });
 

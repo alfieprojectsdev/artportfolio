@@ -8,6 +8,10 @@ export default defineConfig({
   // Directory containing test files
   testDir: './e2e',
 
+  // Refuses to run against the production database, or with a live Resend
+  // key present. Fails closed — see e2e/guard.setup.ts.
+  globalSetup: './e2e/guard.setup.ts',
+
   // Run tests in files in parallel
   fullyParallel: true,
 
@@ -56,6 +60,8 @@ export default defineConfig({
   // Run your local dev server before starting the tests
   webServer: {
     command: 'npm run dev',
+    // Disables the Astro dev toolbar, which overlays the lightbox controls.
+    env: { PLAYWRIGHT: '1' },
     url: 'http://localhost:4321',
     // Server startup timeout: 120 seconds
     timeout: 120000,

@@ -69,8 +69,11 @@ test.describe('Admin Gallery Management', () => {
     });
 
     test('form has Image upload section', async () => {
-      const imageLabel = page.locator('.add-item-form .form-group label', { hasText: 'Image' });
-      await expect(imageLabel).toBeVisible();
+      const renderedLabel = page.locator('.add-item-form .form-group label', { hasText: 'Rendered Image' });
+      await expect(renderedLabel).toBeVisible();
+
+      const flatLabel = page.locator('.add-item-form .form-group label', { hasText: 'Flat Image' });
+      await expect(flatLabel).toBeVisible();
     });
 
     test('form has Title input field', async () => {

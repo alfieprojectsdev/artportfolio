@@ -7,7 +7,7 @@ test.describe('Lightbox', () => {
 
   test.describe('Opening Lightbox', () => {
     test('opens when clicking gallery image', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count === 0, 'No gallery items to test');
 
@@ -16,7 +16,7 @@ test.describe('Lightbox', () => {
     });
 
     test('displays lightbox image when opened', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count === 0, 'No gallery items to test');
 
@@ -27,7 +27,7 @@ test.describe('Lightbox', () => {
     });
 
     test('displays correct image from gallery item', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count === 0, 'No gallery items to test');
 
@@ -43,7 +43,7 @@ test.describe('Lightbox', () => {
 
   test.describe('Closing Lightbox', () => {
     test('closes with close button', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count === 0, 'No gallery items to test');
 
@@ -57,7 +57,7 @@ test.describe('Lightbox', () => {
     });
 
     test('closes with Escape key', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count === 0, 'No gallery items to test');
 
@@ -71,7 +71,7 @@ test.describe('Lightbox', () => {
     });
 
     test('closes when clicking outside the image', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count === 0, 'No gallery items to test');
 
@@ -88,7 +88,7 @@ test.describe('Lightbox', () => {
 
   test.describe('Navigation', () => {
     test('navigates to next image with next button', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count < 2, 'Need at least 2 gallery items for navigation test');
 
@@ -109,7 +109,7 @@ test.describe('Lightbox', () => {
     });
 
     test('navigates to previous image with prev button', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count < 2, 'Need at least 2 gallery items for navigation test');
 
@@ -130,7 +130,7 @@ test.describe('Lightbox', () => {
     });
 
     test('navigates with arrow keys', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count < 2, 'Need at least 2 gallery items for navigation test');
 
@@ -153,7 +153,7 @@ test.describe('Lightbox', () => {
     });
 
     test('wraps around from last to first image', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count < 2, 'Need at least 2 gallery items for navigation test');
 
@@ -174,7 +174,7 @@ test.describe('Lightbox', () => {
     });
 
     test('wraps around from first to last image', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count < 2, 'Need at least 2 gallery items for navigation test');
 
@@ -197,7 +197,7 @@ test.describe('Lightbox', () => {
 
   test.describe('Image Counter', () => {
     test('displays image counter', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count === 0, 'No gallery items to test');
 
@@ -207,7 +207,7 @@ test.describe('Lightbox', () => {
     });
 
     test('shows correct initial counter value', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count === 0, 'No gallery items to test');
 
@@ -218,7 +218,7 @@ test.describe('Lightbox', () => {
     });
 
     test('shows correct counter when opening different image', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count < 3, 'Need at least 3 gallery items for this test');
 
@@ -229,7 +229,7 @@ test.describe('Lightbox', () => {
     });
 
     test('updates counter on navigation', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const count = await galleryImages.count();
       test.skip(count < 2, 'Need at least 2 gallery items for navigation test');
 
@@ -250,7 +250,7 @@ test.describe('Lightbox', () => {
 
   test.describe('Empty Gallery Handling', () => {
     test('handles empty gallery gracefully', async ({ page }) => {
-      const galleryImages = page.locator('.gallery-item img');
+      const galleryImages = page.locator('.gallery-item > img');
       const emptyGallery = page.locator('.empty-gallery');
       const lightbox = page.locator('#lightbox');
 
@@ -271,6 +271,74 @@ test.describe('Lightbox', () => {
         await galleryImages.first().click();
         await expect(lightbox).toHaveClass(/open/);
       }
+    });
+  });
+
+  test.describe('Interaction with category filters', () => {
+    /**
+     * Regression: the navigable set used to be snapshotted once at page load,
+     * so filtering the gallery left hidden artwork in the lightbox. Arrowing
+     * through a filtered gallery walked into pieces from other categories, and
+     * the counter reported the unfiltered total.
+     */
+    test('only navigates images from the active filter', async ({ page }) => {
+      const categoryButtons = page.locator('.filter-btn:not([data-filter="all"])');
+      const categoryCount = await categoryButtons.count();
+      test.skip(categoryCount === 0, 'No category filters to test');
+
+      const allImages = page.locator('.gallery-item > img');
+      const totalCount = await allImages.count();
+      test.skip(totalCount < 2, 'Need at least 2 clickable gallery items');
+
+      // Find a category that leaves at least one clickable image and hides others.
+      let matched = false;
+      for (let i = 0; i < categoryCount; i++) {
+        await categoryButtons.nth(i).click();
+
+        const visible = page.locator('.gallery-item:not(.hidden) > img');
+        const visibleCount = await visible.count();
+        if (visibleCount === 0 || visibleCount === totalCount) continue;
+
+        matched = true;
+
+        await visible.first().click();
+        await expect(page.locator('#lightbox')).toHaveClass(/open/);
+
+        // Counter reflects the filtered set, not every item on the page.
+        await expect(page.locator('#img-counter')).toHaveText(`1 / ${visibleCount}`);
+
+        // Stepping through the whole filtered set only ever shows visible art.
+        const visibleSrcs = await visible.evaluateAll(imgs =>
+          imgs.map(img => (img as HTMLImageElement).dataset.full || (img as HTMLImageElement).src)
+        );
+
+        for (let step = 0; step < visibleCount; step++) {
+          const src = await page.locator('#lightbox-img').getAttribute('src');
+          expect(visibleSrcs).toContain(src);
+          await page.locator('#next-btn').click();
+        }
+
+        // Wrapped back to the start of the filtered set.
+        await expect(page.locator('#img-counter')).toHaveText(`1 / ${visibleCount}`);
+        break;
+      }
+
+      test.skip(!matched, 'No category partitions the gallery');
+    });
+
+    test('filter buttons expose pressed state', async ({ page }) => {
+      const filterButtons = page.locator('.filter-btn');
+      test.skip((await filterButtons.count()) === 0, 'No filters rendered');
+
+      const all = page.locator('.filter-btn[data-filter="all"]');
+      await expect(all).toHaveAttribute('aria-pressed', 'true');
+
+      const other = page.locator('.filter-btn:not([data-filter="all"])').first();
+      test.skip((await other.count()) === 0, 'Only the "all" filter exists');
+
+      await other.click();
+      await expect(other).toHaveAttribute('aria-pressed', 'true');
+      await expect(all).toHaveAttribute('aria-pressed', 'false');
     });
   });
 });
