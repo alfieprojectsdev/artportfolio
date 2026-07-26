@@ -1,26 +1,34 @@
 import { Resend } from 'resend';
-import { escapeHtml } from './utils';
+import { escapeHtml, phpToUsd } from './utils';
+import { env, fromEmail, siteUrl } from './env';
 
 // Lazy-initialize Resend client to avoid issues when API key is not set
 let resendClient: Resend | null = null;
 
 function getResendClient(): Resend | null {
-  if (!import.meta.env.RESEND_API_KEY) {
+  if (!env.RESEND_API_KEY) {
     return null;
   }
   if (!resendClient) {
-    resendClient = new Resend(import.meta.env.RESEND_API_KEY);
+    resendClient = new Resend(env.RESEND_API_KEY);
   }
   return resendClient;
 }
 
-// Artist's email (from env or default)
-function getArtistEmail(): string {
-  return import.meta.env.ARTIST_EMAIL || 'bred@example.com';
+/**
+ * The artist's inbox. No fallback on purpose.
+ *
+ * This used to default to `bred@example.com`. example.com is IANA-reserved and
+ * never delivers, so an unset ARTIST_EMAIL meant Resend accepted the send,
+ * returned an id, this function reported success, and the artist never heard
+ * that a commission had come in. Silent loss on the one path that matters.
+ */
+function getArtistEmail(): string | null {
+  return env.ARTIST_EMAIL ?? null;
 }
 
 function getFromEmail(): string {
-  return import.meta.env.FROM_EMAIL || 'commissions@resend.dev';
+  return fromEmail();
 }
 
 interface CommissionEmailData {
@@ -45,6 +53,15 @@ export async function sendNewCommissionNotification(commission: CommissionEmailD
     return false;
   }
 
+  const artistEmail = getArtistEmail();
+  if (!artistEmail) {
+    console.error(
+      `[email] ARTIST_EMAIL is not set — cannot notify the artist about commission #${commission.id} ` +
+        `from ${commission.clientName}. The request IS saved and visible in /admin, but no email was sent.`
+    );
+    return false;
+  }
+
   try {
     const refImagesHtml = commission.refImages && commission.refImages.length > 0
       ? `<p><strong>Reference Images:</strong> ${commission.refImages.length} attached</p>
@@ -59,7 +76,9 @@ export async function sendNewCommissionNotification(commission: CommissionEmailD
 
     const { data, error } = await resend.emails.send({
       from: `Commission Bot <${getFromEmail()}>`,
-      to: [getArtistEmail()],
+      to: [artistEmail],
+      // Hitting reply goes to the client, not to the bot address.
+      replyTo: commission.email,
       subject: `New Commission Request from ${commission.clientName}`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -87,7 +106,7 @@ export async function sendNewCommissionNotification(commission: CommissionEmailD
           ${refImagesHtml}
 
           <div style="margin-top: 30px; text-align: center;">
-            <a href="${import.meta.env.SITE_URL || 'https://artportfolio-sigma.vercel.app'}/admin"
+            <a href="${siteUrl()}/admin"
                style="background: #916A5D; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">
               View in Admin Panel
             </a>
@@ -127,6 +146,8 @@ export async function sendCommissionConfirmation(commission: CommissionEmailData
     const { data, error } = await resend.emails.send({
       from: `Bred's Commissions <${getFromEmail()}>`,
       to: [commission.email],
+      // Client replies reach the artist, not the send-only from address.
+      ...(getArtistEmail() ? { replyTo: getArtistEmail()! } : {}),
       subject: 'Commission Request Received!',
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -139,7 +160,7 @@ export async function sendCommissionConfirmation(commission: CommissionEmailData
           <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin: 20px 0;">
             <p><strong>Type:</strong> ${escapeHtml(commission.artType)}</p>
             ${commission.style ? `<p><strong>Style:</strong> ${escapeHtml(commission.style)}</p>` : ''}
-            ${commission.estimatedPrice ? `<p><strong>Estimated Price:</strong> ₱${commission.estimatedPrice} (~$${Math.round(commission.estimatedPrice / 56)} USD)</p>` : ''}
+            ${commission.estimatedPrice ? `<p><strong>Estimated Price:</strong> ₱${commission.estimatedPrice} (~$${phpToUsd(commission.estimatedPrice)} USD)</p>` : ''}
           </div>
 
           <p><strong>Your request:</strong></p>
@@ -221,6 +242,7 @@ export async function sendStatusUpdateEmail(
     const { data, error } = await resend.emails.send({
       from: `Bred's Commissions <${getFromEmail()}>`,
       to: [clientEmail],
+      ...(getArtistEmail() ? { replyTo: getArtistEmail()! } : {}),
       subject: statusInfo.subject,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
