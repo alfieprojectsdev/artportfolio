@@ -1,0 +1,189 @@
+/*
+ * Design tokens — the single source of truth for colour, spacing, radius and
+ * type across every screen.
+ *
+ * Scales (space/radius/type/shadow) are global and shared. Colour is themed:
+ * `.theme-public` for the visitor-facing site, `.theme-admin` for the
+ * dashboard. Both themes define the SAME token names, so a component styled
+ * against `--color-accent` looks right on either screen.
+ *
+ * Imported from BaseLayout.astro, so every page gets it automatically.
+ */
+
+:root {
+  /* Spacing — every value below is one that the design already used, so
+     switching to the scale does not move anything on screen. */
+  --space-1: 0.25rem;    /* 4px  */
+  --space-2: 0.5rem;     /* 8px  */
+  --space-3: 0.625rem;   /* 10px */
+  --space-4: 0.75rem;    /* 12px */
+  --space-5: 1rem;       /* 16px */
+  --space-6: 1.25rem;    /* 20px */
+  --space-7: 1.5rem;     /* 24px */
+  --space-8: 1.875rem;   /* 30px */
+  --space-9: 2rem;       /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+  --space-14: 3.75rem;   /* 60px */
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;      /* == 0.375rem, the public site's signature radius */
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 50px;
+  --radius-round: 50%;
+
+  /* Type */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 0.95rem;
+  --text-base: 1rem;
+  --text-lg: 1.1rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.5rem;
+
+  --weight-light: 300;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.6;
+  --leading-loose: 1.7;
+
+  /* Fonts — both themes load all three families (BaseLayout requests them in
+     one stylesheet), so headings can be serif on either screen. */
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Kosugi', monospace;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 15px rgba(0, 0, 0, 0.15);
+
+  /* Motion */
+  --transition-fast: 0.2s ease;
+  --transition-base: 0.3s ease;
+}
+
+/* ---------------------------------------------------------------------------
+ * Public site — warm brown over the painted background.
+ * ------------------------------------------------------------------------- */
+.theme-public {
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  /* Panels sit on the background image, so they are translucent white. */
+  --color-surface-veil: rgba(255, 255, 255, 0.92);
+  --color-surface-alt: #ffffff;
+
+  --color-text: #000000;
+  --color-text-muted: #916a5d;
+  --color-text-subtle: #7a5a4f;
+
+  --color-accent: #916a5d;
+  --color-accent-strong: #7a5a4f;
+  --color-accent-deep: #5f463d;
+  --color-accent-soft: rgba(242, 227, 203, 0.678);
+  --color-accent-soft-hover: rgba(242, 227, 203, 0.9);
+  --color-on-accent: #ffffff;
+
+  --color-border: #a18278;
+  --color-border-focus: #916a5d;
+  --color-focus-ring: rgba(145, 106, 93, 0.2);
+
+  --color-shadow-accent: rgba(145, 106, 93, 0.3);
+  --color-overlay: rgba(112, 63, 63, 0.9);
+
+  --color-success: #4a7a4a;
+  --color-warning: #8a5b00;
+  --color-danger: #a85454;
+  --color-info: #2b6cb0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Admin dashboard — same brand hues as the public site, lighter surfaces so
+ * dense forms and tables stay readable.
+ * ------------------------------------------------------------------------- */
+.theme-admin {
+  --color-bg: #faf7f4;
+  --color-surface: #ffffff;
+  --color-surface-veil: #ffffff;
+  --color-surface-alt: #f6f0ea;
+
+  --color-text: #2a211e;
+  --color-text-muted: #6b5750;
+  --color-text-subtle: #8c7a73;
+
+  --color-accent: #916a5d;
+  --color-accent-strong: #7a5a4f;
+  --color-accent-deep: #5f463d;
+  --color-accent-soft: #f2e3cb;
+  --color-accent-soft-hover: #ead7b8;
+  --color-on-accent: #ffffff;
+
+  --color-border: #e3d8d2;
+  --color-border-focus: #a18278;
+  --color-focus-ring: rgba(145, 106, 93, 0.2);
+
+  --color-shadow-accent: rgba(145, 106, 93, 0.25);
+  --color-overlay: rgba(42, 33, 30, 0.5);
+
+  --color-success: #2f7a4f;
+  --color-warning: #8a5b00;
+  --color-danger: #a85454;
+  --color-info: #2b6cb0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Status colours — shared by both themes.
+ *
+ * Every solid value below clears WCAG AA (4.5:1) against white text at small
+ * sizes, which the previous palette (#f59e0b 2.15:1, #10b981 2.56:1,
+ * #3b82f6 3.76:1, #ef4444 3.83:1) did not.
+ * ------------------------------------------------------------------------- */
+:root {
+  --color-success-soft: #d1fae5;
+  --color-on-success-soft: #155724;
+  --color-warning-soft: #fef3c7;
+  --color-on-warning-soft: #92400e;
+  --color-danger-soft: #fee2e2;
+  --color-on-danger-soft: #991b1b;
+  --color-info-soft: #dbeafe;
+  --color-on-info-soft: #1e40af;
+}
+
+/* ---------------------------------------------------------------------------
+ * Reset + shared primitives.
+ * ------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Anything focused by keyboard gets a visible ring, on both screens. */
+:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

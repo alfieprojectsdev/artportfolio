@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import CloudinaryUploadWidget, { type CloudinaryUploadResult } from './CloudinaryUploadWidget';
 import type { PortfolioItem, CommissionRequest, SiteSettings } from '../../db/schema';
+import { PRICED_ART_TYPES, STYLES } from '../../lib/schemas';
 
 interface AdminDashboardProps {
   cloudName: string;
@@ -11,14 +12,24 @@ type Tab = 'gallery' | 'commissions' | 'settings';
 type CommissionStatus = 'all' | 'pending' | 'accepted' | 'in_progress' | 'completed' | 'declined';
 type SortField = 'createdAt' | 'clientName' | 'status';
 type SortOrder = 'asc' | 'desc';
+type Notice = { kind: 'success' | 'error'; message: string };
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#f59e0b',
-  accepted: '#10b981',
-  in_progress: '#3b82f6',
-  completed: '#6366f1',
-  declined: '#ef4444',
-};
+const TABS: { id: Tab; label: (counts: { gallery: number; pending: number }) => string }[] = [
+  { id: 'gallery', label: ({ gallery }) => `Gallery (${gallery})` },
+  { id: 'commissions', label: ({ pending }) => `Commissions (${pending} pending)` },
+  { id: 'settings', label: () => 'Settings' },
+];
+
+const STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'declined', label: 'Declined' },
+];
+
+/** Cloudinary delivery transform helper — resize on their CDN, not in the browser. */
+const thumb = (url: string, transform: string) => url.replace('/upload/', `/upload/${transform}/`);
 
 export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('gallery');
@@ -26,7 +37,8 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
   const [commissions, setCommissions] = useState<CommissionRequest[]>([]);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Commission management state
   const [statusFilter, setStatusFilter] = useState<CommissionStatus>('all');
@@ -35,6 +47,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
   const [selectedCommission, setSelectedCommission] = useState<CommissionRequest | null>(null);
   const [editingNotes, setEditingNotes] = useState('');
   const [editingQuotedPrice, setEditingQuotedPrice] = useState<number | ''>('');
+  const [pendingDelete, setPendingDelete] = useState<PortfolioItem | null>(null);
 
   // Form state for new gallery item
   const [newItem, setNewItem] = useState({
@@ -49,6 +62,19 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
     fetchData();
   }, []);
 
+  const fail = (message: string) => setNotice({ kind: 'error', message });
+  const succeed = (message: string) => setNotice({ kind: 'success', message });
+
+  /** Pull the server's error message when there is one, so failures are specific. */
+  const errorMessage = async (res: Response, fallback: string) => {
+    try {
+      const body = await res.json();
+      return body?.error ? `${fallback}: ${body.error}` : `${fallback} (HTTP ${res.status})`;
+    } catch {
+      return `${fallback} (HTTP ${res.status})`;
+    }
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -61,8 +87,20 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
       if (galleryRes.ok) setGalleryItems(await galleryRes.json());
       if (commissionsRes.ok) setCommissions(await commissionsRes.json());
       if (settingsRes.ok) setSettings(await settingsRes.json());
+
+      // A non-ok response used to leave the panel silently empty, which looks
+      // identical to "you have no data yet".
+      const failed = [
+        !galleryRes.ok && 'gallery',
+        !commissionsRes.ok && 'commissions',
+        !settingsRes.ok && 'settings',
+      ].filter(Boolean);
+
+      if (failed.length > 0) {
+        fail(`Could not load ${failed.join(', ')}. Try reloading the page.`);
+      }
     } catch (err) {
-      setError('Failed to load data');
+      fail('Failed to load data. Check your connection and reload.');
     } finally {
       setIsLoading(false);
     }
@@ -77,6 +115,8 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
 
   const handleAddGalleryItem = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       const res = await fetch('/api/gallery', {
         method: 'POST',
@@ -87,83 +127,76 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
         const item = await res.json();
         setGalleryItems(prev => [item, ...prev]);
         setNewItem({ title: '', imageUrl: '', flatUrl: '', category: 'commission', altText: '' });
+        succeed(`"${item.title}" added to the gallery.`);
+      } else {
+        fail(await errorMessage(res, 'Failed to add item'));
       }
     } catch (err) {
-      setError('Failed to add item');
+      fail('Failed to add item. Check your connection.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDeleteGalleryItem = async (id: number) => {
-    if (!confirm('Delete this item?')) return;
+  const handleDeleteGalleryItem = async (item: PortfolioItem) => {
+    setPendingDelete(null);
     try {
-      const res = await fetch(`/api/gallery/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/gallery/${item.id}`, { method: 'DELETE' });
       if (res.ok) {
-        setGalleryItems(prev => prev.filter(item => item.id !== id));
+        setGalleryItems(prev => prev.filter(i => i.id !== item.id));
+        succeed(`"${item.title}" deleted.`);
+      } else {
+        fail(await errorMessage(res, 'Failed to delete item'));
       }
     } catch (err) {
-      setError('Failed to delete item');
+      fail('Failed to delete item. Check your connection.');
     }
   };
 
-  const handleUpdateCommissionStatus = async (id: number, status: string) => {
-    try {
-      const res = await fetch(`/api/commissions/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (res.ok) {
-        setCommissions(prev =>
-          prev.map(c => (c.id === id ? { ...c, status } : c))
-        );
-        if (selectedCommission?.id === id) {
-          setSelectedCommission(prev => prev ? { ...prev, status } : null);
-        }
-      }
-    } catch (err) {
-      setError('Failed to update status');
-    }
-  };
-
-  const handleUpdateCommission = async (id: number, updates: Partial<CommissionRequest>) => {
+  const handleUpdateCommission = async (
+    id: number,
+    updates: Partial<CommissionRequest>
+  ): Promise<boolean> => {
     try {
       const res = await fetch(`/api/commissions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
-      if (res.ok) {
-        const updated = await res.json();
-        setCommissions(prev =>
-          prev.map(c => (c.id === id ? { ...c, ...updates } : c))
-        );
-        if (selectedCommission?.id === id) {
-          setSelectedCommission(prev => prev ? { ...prev, ...updates } : null);
-        }
-        return true;
+      if (!res.ok) {
+        fail(await errorMessage(res, 'Failed to update commission'));
+        return false;
       }
-      return false;
+      // Take the server's row rather than the optimistic patch, so fields the
+      // server derives (updatedAt) stay in sync.
+      const updated: CommissionRequest = await res.json();
+      setCommissions(prev => prev.map(c => (c.id === id ? updated : c)));
+      setSelectedCommission(prev => (prev?.id === id ? updated : prev));
+      return true;
     } catch (err) {
-      setError('Failed to update commission');
+      fail('Failed to update commission. Check your connection.');
       return false;
     }
   };
+
+  const handleUpdateCommissionStatus = (id: number, status: string) =>
+    handleUpdateCommission(id, { status });
 
   const openCommissionDetail = (commission: CommissionRequest) => {
     setSelectedCommission(commission);
     setEditingNotes(commission.notes || '');
-    setEditingQuotedPrice(commission.quotedPrice || '');
+    setEditingQuotedPrice(commission.quotedPrice ?? '');
   };
 
   const saveCommissionDetails = async () => {
-    if (!selectedCommission) return;
+    if (!selectedCommission || isSaving) return;
+    setIsSaving(true);
     const success = await handleUpdateCommission(selectedCommission.id, {
       notes: editingNotes,
       quotedPrice: editingQuotedPrice === '' ? null : Number(editingQuotedPrice),
     });
-    if (success) {
-      alert('Commission updated!');
-    }
+    setIsSaving(false);
+    if (success) succeed(`Commission #${selectedCommission.id} updated.`);
   };
 
   // Filter and sort commissions
@@ -192,7 +225,8 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
 
   const handleUpdateSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!settings) return;
+    if (!settings || isSaving) return;
+    setIsSaving(true);
     try {
       const res = await fetch('/api/settings', {
         method: 'PUT',
@@ -200,10 +234,15 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
         body: JSON.stringify(settings),
       });
       if (res.ok) {
-        alert('Settings saved!');
+        setSettings(await res.json());
+        succeed('Settings saved.');
+      } else {
+        fail(await errorMessage(res, 'Failed to save settings'));
       }
     } catch (err) {
-      setError('Failed to save settings');
+      fail('Failed to save settings. Check your connection.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -211,57 +250,50 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
     return <div className="admin-loading">Loading dashboard...</div>;
   }
 
+  const artistNameIsBlank = settings?.artistName?.trim().length === 0;
+  const tabCounts = {
+    gallery: galleryItems.length,
+    pending: commissions.filter(c => c.status === 'pending').length,
+  };
+
   return (
     <div className="admin-dashboard">
-      <nav className="admin-nav">
-        <button
-          className={activeTab === 'gallery' ? 'active' : ''}
-          onClick={() => setActiveTab('gallery')}
-          style={activeTab === 'gallery' ? {
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-            color: '#ffffff',
-            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.5)',
-            fontWeight: 700,
-            transform: 'scale(1.03)',
-            border: '2px solid rgba(255, 255, 255, 0.3)'
-          } : {}}
-        >
-          Gallery ({galleryItems.length})
-        </button>
-        <button
-          className={activeTab === 'commissions' ? 'active' : ''}
-          onClick={() => setActiveTab('commissions')}
-          style={activeTab === 'commissions' ? {
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-            color: '#ffffff',
-            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.5)',
-            fontWeight: 700,
-            transform: 'scale(1.03)',
-            border: '2px solid rgba(255, 255, 255, 0.3)'
-          } : {}}
-        >
-          Commissions ({commissions.filter(c => c.status === 'pending').length} pending)
-        </button>
-        <button
-          className={activeTab === 'settings' ? 'active' : ''}
-          onClick={() => setActiveTab('settings')}
-          style={activeTab === 'settings' ? {
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-            color: '#ffffff',
-            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.5)',
-            fontWeight: 700,
-            transform: 'scale(1.03)',
-            border: '2px solid rgba(255, 255, 255, 0.3)'
-          } : {}}
-        >
-          Settings
-        </button>
+      <nav className="admin-nav" role="tablist" aria-label="Dashboard sections">
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            id={`tab-${tab.id}`}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            aria-controls={`panel-${tab.id}`}
+            className={activeTab === tab.id ? 'active' : ''}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label(tabCounts)}
+          </button>
+        ))}
       </nav>
 
-      {error && <div className="admin-error">{error}</div>}
+      {notice && (
+        <div
+          className={`admin-notice ${notice.kind === 'error' ? 'is-error admin-error' : 'is-success'}`}
+          role={notice.kind === 'error' ? 'alert' : 'status'}
+        >
+          <span>{notice.message}</span>
+          <button
+            type="button"
+            className="notice-dismiss"
+            aria-label="Dismiss message"
+            onClick={() => setNotice(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {activeTab === 'gallery' && (
-        <div className="admin-section">
+        <div className="admin-section" id="panel-gallery" role="tabpanel" aria-labelledby="tab-gallery">
           <h2>Gallery Management</h2>
 
           <form onSubmit={handleAddGalleryItem} className="add-item-form">
@@ -275,7 +307,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                 <p className="field-hint">The final/rendered version of the artwork</p>
                 {newItem.imageUrl ? (
                   <div className="preview-image">
-                    <img src={newItem.imageUrl.replace('/upload/', '/upload/w_400,q_auto,f_auto/')} alt="Rendered preview" />
+                    <img src={thumb(newItem.imageUrl, 'w_400,q_auto,f_auto')} alt="Rendered preview" />
                     <button type="button" onClick={() => setNewItem(prev => ({ ...prev, imageUrl: '' }))}>
                       Remove
                     </button>
@@ -296,7 +328,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                 <p className="field-hint">The flat/sketch version for before/after comparison slider</p>
                 {newItem.flatUrl ? (
                   <div className="preview-image">
-                    <img src={newItem.flatUrl.replace('/upload/', '/upload/w_400,q_auto,f_auto/')} alt="Flat preview" />
+                    <img src={thumb(newItem.flatUrl, 'w_400,q_auto,f_auto')} alt="Flat preview" />
                     <button type="button" onClick={() => setNewItem(prev => ({ ...prev, flatUrl: '' }))}>
                       Remove
                     </button>
@@ -352,8 +384,8 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
               </div>
             </fieldset>
 
-            <button type="submit" disabled={!newItem.imageUrl || !newItem.title}>
-              Add to Gallery
+            <button type="submit" disabled={isSaving || !newItem.imageUrl || !newItem.title}>
+              {isSaving ? 'Adding...' : 'Add to Gallery'}
             </button>
           </form>
 
@@ -362,7 +394,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
             <div className="gallery-list-container">
               {galleryItems.map(item => (
                 <div key={item.id} className="gallery-list-item">
-                  <img src={item.imageUrl.replace('/upload/', '/upload/w_100,h_100,c_fill/')} alt={item.altText || item.title} />
+                  <img src={thumb(item.imageUrl, 'w_100,h_100,c_fill')} alt={item.altText || item.title} />
                   <div className="item-info">
                     <strong>{item.title}</strong>
                     <span className="separator" aria-hidden="true">|</span>
@@ -371,7 +403,8 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                   </div>
                   <button
                     className="delete-btn"
-                    onClick={() => handleDeleteGalleryItem(item.id)}
+                    type="button"
+                    onClick={() => setPendingDelete(item)}
                   >
                     Delete
                   </button>
@@ -379,24 +412,57 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
               ))}
             </div>
           </div>
+
+          {/* Replaces window.confirm(): a native dialog blocks the page and is
+              invisible to the Playwright suite. */}
+          {pendingDelete && (
+            <div className="modal-overlay" onClick={() => setPendingDelete(null)}>
+              <div
+                className="modal-content confirm-dialog"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="confirm-delete-title"
+                onClick={e => e.stopPropagation()}
+              >
+                <h3 id="confirm-delete-title">Delete this item?</h3>
+                <p>"{pendingDelete.title}" will be removed from the gallery. This cannot be undone.</p>
+                <div className="confirm-actions">
+                  <button type="button" className="btn-secondary" onClick={() => setPendingDelete(null)}>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="delete-btn"
+                    onClick={() => handleDeleteGalleryItem(pendingDelete)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {activeTab === 'commissions' && (
-        <div className="admin-section">
+        <div className="admin-section" id="panel-commissions" role="tabpanel" aria-labelledby="tab-commissions">
           <h2>Commission Requests</h2>
 
           {/* Filter bar */}
           <div className="commission-filters">
             <div className="filter-group">
-              <label>Status:</label>
-              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as CommissionStatus)}>
+              <label htmlFor="commission-status-filter">Status:</label>
+              <select
+                id="commission-status-filter"
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value as CommissionStatus)}
+              >
                 <option value="all">All ({commissions.length})</option>
-                <option value="pending">Pending ({commissions.filter(c => c.status === 'pending').length})</option>
-                <option value="accepted">Accepted ({commissions.filter(c => c.status === 'accepted').length})</option>
-                <option value="in_progress">In Progress ({commissions.filter(c => c.status === 'in_progress').length})</option>
-                <option value="completed">Completed ({commissions.filter(c => c.status === 'completed').length})</option>
-                <option value="declined">Declined ({commissions.filter(c => c.status === 'declined').length})</option>
+                {STATUS_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label} ({commissions.filter(c => c.status === value).length})
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -446,28 +512,24 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                       )}
                     </td>
                     <td>
-                      <span
-                        className="status-badge"
-                        style={{ backgroundColor: STATUS_COLORS[commission.status || 'pending'] }}
-                      >
+                      <span className={`status-badge is-${commission.status || 'pending'}`}>
                         {commission.status || 'pending'}
                       </span>
                     </td>
                     <td>{new Date(commission.createdAt!).toLocaleDateString()}</td>
                     <td className="actions">
-                      <button className="btn-view" onClick={() => openCommissionDetail(commission)}>
+                      <button className="btn-view" type="button" onClick={() => openCommissionDetail(commission)}>
                         View
                       </button>
                       <select
                         value={commission.status || 'pending'}
                         onChange={e => handleUpdateCommissionStatus(commission.id, e.target.value)}
                         className="status-select"
+                        aria-label={`Status for ${commission.clientName}`}
                       >
-                        <option value="pending">Pending</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="declined">Declined</option>
+                        {STATUS_OPTIONS.map(({ value, label }) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
                       </select>
                     </td>
                   </tr>
@@ -479,15 +541,18 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
           {/* Commission Detail Modal */}
           {selectedCommission && (
             <div className="modal-overlay" onClick={() => setSelectedCommission(null)}>
-              <div className="modal-content commission-detail" onClick={e => e.stopPropagation()}>
-                <button className="modal-close" onClick={() => setSelectedCommission(null)}>×</button>
+              <div
+                className="modal-content commission-detail"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="commission-detail-title"
+                onClick={e => e.stopPropagation()}
+              >
+                <button className="modal-close" type="button" aria-label="Close" onClick={() => setSelectedCommission(null)}>×</button>
 
                 <div className="modal-header">
-                  <h3>Commission #{selectedCommission.id}</h3>
-                  <span
-                    className="status-badge large"
-                    style={{ backgroundColor: STATUS_COLORS[selectedCommission.status || 'pending'] }}
-                  >
+                  <h3 id="commission-detail-title">Commission #{selectedCommission.id}</h3>
+                  <span className={`status-badge large is-${selectedCommission.status || 'pending'}`}>
                     {selectedCommission.status || 'pending'}
                   </span>
                 </div>
@@ -520,7 +585,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                     <div className="ref-images-grid">
                       {selectedCommission.refImages.map((url, i) => (
                         <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                          <img src={url.replace('/upload/', '/upload/w_150,h_150,c_fill/')} alt={`Reference ${i + 1}`} />
+                          <img src={thumb(url, 'w_150,h_150,c_fill')} alt={`Reference ${i + 1}`} />
                         </a>
                       ))}
                     </div>
@@ -532,22 +597,22 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Status</label>
+                      <label htmlFor="detail-status">Status</label>
                       <select
+                        id="detail-status"
                         value={selectedCommission.status || 'pending'}
                         onChange={e => handleUpdateCommissionStatus(selectedCommission.id, e.target.value)}
                       >
-                        <option value="pending">Pending</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="declined">Declined</option>
+                        {STATUS_OPTIONS.map(({ value, label }) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
                       </select>
                     </div>
 
                     <div className="form-group">
-                      <label>Quoted Price (₱)</label>
+                      <label htmlFor="detail-price">Quoted Price (₱)</label>
                       <input
+                        id="detail-price"
                         type="number"
                         value={editingQuotedPrice}
                         onChange={e => setEditingQuotedPrice(e.target.value === '' ? '' : Number(e.target.value))}
@@ -557,8 +622,9 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                   </div>
 
                   <div className="form-group">
-                    <label>Internal Notes</label>
+                    <label htmlFor="detail-notes">Internal Notes</label>
                     <textarea
+                      id="detail-notes"
                       value={editingNotes}
                       onChange={e => setEditingNotes(e.target.value)}
                       rows={4}
@@ -566,8 +632,8 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                     />
                   </div>
 
-                  <button className="btn-save" onClick={saveCommissionDetails}>
-                    Save Changes
+                  <button className="btn-save" type="button" disabled={isSaving} onClick={saveCommissionDetails}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </fieldset>
               </div>
@@ -577,14 +643,15 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
       )}
 
       {activeTab === 'settings' && settings && (
-        <div className="admin-section">
+        <div className="admin-section" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings">
           <h2>Site Settings</h2>
           <form onSubmit={handleUpdateSettings} className="settings-form">
             <fieldset className="form-fieldset">
               <legend>Commission Status</legend>
               <div className="form-group">
-                <label>Current Status</label>
+                <label htmlFor="commission-status">Current Status</label>
                 <select
+                  id="commission-status"
                   value={settings.commissionStatus || 'open'}
                   onChange={e => setSettings(prev => prev ? { ...prev, commissionStatus: e.target.value } : null)}
                 >
@@ -599,31 +666,31 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
             <fieldset className="form-fieldset">
               <legend>Artist Profile</legend>
               <div className="form-group">
-                <label>Artist Name <span style={{ color: '#ef4444' }}>*</span></label>
+                <label htmlFor="artist-name">
+                  Artist Name <span className="required-marker">*</span>
+                </label>
                 <input
+                  id="artist-name"
                   type="text"
                   value={settings.artistName || ''}
                   onChange={e => setSettings(prev => prev ? { ...prev, artistName: e.target.value } : null)}
                   required
                   minLength={1}
                   placeholder="Enter your artist name"
-                  style={
-                    settings.artistName?.trim().length === 0
-                      ? { borderColor: '#ef4444', borderWidth: '2px' }
-                      : {}
-                  }
+                  className={artistNameIsBlank ? 'is-invalid' : undefined}
+                  aria-invalid={artistNameIsBlank || undefined}
+                  aria-describedby={artistNameIsBlank ? 'artist-name-error' : undefined}
                 />
-                {settings.artistName?.trim().length === 0 && (
-                  <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '4px' }}>
-                    Artist name is required
-                  </p>
+                {artistNameIsBlank && (
+                  <p className="field-error" id="artist-name-error">Artist name is required</p>
                 )}
                 <p className="field-hint">Your name will appear in the site title and header</p>
               </div>
 
               <div className="form-group">
-                <label>Bio</label>
+                <label htmlFor="artist-bio">Bio</label>
                 <textarea
+                  id="artist-bio"
                   value={settings.bio || ''}
                   onChange={e => setSettings(prev => prev ? { ...prev, bio: e.target.value } : null)}
                   rows={4}
@@ -635,8 +702,9 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
               <legend>Social Links</legend>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Instagram Handle</label>
+                  <label htmlFor="instagram">Instagram Handle</label>
                   <input
+                    id="instagram"
                     type="text"
                     value={settings.instagram || ''}
                     onChange={e => setSettings(prev => prev ? { ...prev, instagram: e.target.value } : null)}
@@ -645,8 +713,9 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                 </div>
 
                 <div className="form-group">
-                  <label>Discord Username</label>
+                  <label htmlFor="discord">Discord Username</label>
                   <input
+                    id="discord"
                     type="text"
                     value={settings.discord || ''}
                     onChange={e => setSettings(prev => prev ? { ...prev, discord: e.target.value } : null)}
@@ -657,17 +726,25 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
 
             <fieldset className="form-fieldset">
               <legend>Pricing (PHP)</legend>
+              <p className="field-hint">
+                These prices drive the public rate cards and the estimate shown on the commission form.
+              </p>
               <div className="pricing-grid">
-                {(['bust', 'half', 'full', 'chibi'] as const).map(type => (
+                {PRICED_ART_TYPES.map(type => (
                   <div key={type} className="pricing-card">
                     <h4>{type.charAt(0).toUpperCase() + type.slice(1)}</h4>
-                    {(['Sketch', 'Flat', 'Rendered'] as const).map(style => {
-                      const key = `${type}${style}` as keyof SiteSettings;
+                    {STYLES.map(style => {
+                      const key = `${type}${style.charAt(0).toUpperCase()}${style.slice(1)}` as keyof SiteSettings;
+                      const inputId = `price-${type}-${style}`;
                       return (
                         <div key={style} className="price-input">
-                          <label>{style}</label>
+                          <label htmlFor={inputId}>
+                            {style.charAt(0).toUpperCase() + style.slice(1)}
+                          </label>
                           <input
+                            id={inputId}
                             type="number"
+                            min={0}
                             value={(settings[key] as number) || 0}
                             onChange={e => setSettings(prev =>
                               prev ? { ...prev, [key]: parseInt(e.target.value) || 0 } : null
@@ -683,9 +760,9 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
 
             <button
               type="submit"
-              disabled={!settings.artistName || settings.artistName.trim().length === 0}
+              disabled={isSaving || !settings.artistName || settings.artistName.trim().length === 0}
             >
-              Save Settings
+              {isSaving ? 'Saving...' : 'Save Settings'}
             </button>
           </form>
         </div>

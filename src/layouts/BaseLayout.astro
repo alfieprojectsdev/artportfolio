@@ -1,0 +1,47 @@
+---
+/**
+ * BaseLayout.astro
+ *
+ * The document shell shared by every page: charset, viewport, fonts and the
+ * design tokens. Pages supply their own page stylesheet and body content.
+ *
+ * `theme` picks the colour set from tokens.css and is applied to <body>, so
+ * every descendant — including React islands — resolves the same token names.
+ */
+import '../styles/tokens.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Which colour theme from tokens.css to apply. */
+  theme: 'public' | 'admin';
+  /** Keep the page out of search results (admin). */
+  noindex?: boolean;
+}
+
+const { title, description, theme, noindex = false } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title}</title>
+  {description && <meta name="description" content={description}>}
+  {noindex && <meta name="robots" content="noindex, nofollow">}
+
+  <!-- Fonts: one request covers both themes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=Inter:wght@400;500;600&family=Kosugi&display=swap"
+    rel="stylesheet"
+  >
+
+  <slot name="head" />
+</head>
+<body class={`theme-${theme}`}>
+  <slot />
+</body>
+</html>
