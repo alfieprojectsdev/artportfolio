@@ -1,11 +1,43 @@
-# ArtPortfolio
+# DementedBred Art Portfolio 🎨✨
 
-A commission-tracking portfolio site for a single artist: a public gallery and rate card, a
-commission request form, and a password-protected admin dashboard for managing artwork,
-requests and site settings.
+A professional, database-driven art portfolio and custom CMS built for DementedBred. This project
+represents a major upgrade from previous static and Carrd-based iterations, offering a fully
+dynamic gallery and streamlined content management.
 
-Built with Astro 5 (SSR) + React islands, Drizzle ORM over Neon Postgres, Cloudinary for images
-and Resend for notification email.
+## 🚀 Features
+
+* **Dynamic Gallery:** Artwork, commission prices, and bio information are stored in a database,
+  allowing for instant site updates without editing raw code.
+* **Commission Requests Manager:** Clients submit commission requests through the site; requests
+  land in an administrative dashboard where they can be triaged, priced, annotated and accepted
+  or declined.
+* **High-Performance Image Hosting:** Integrates with Cloudinary for fast, professional image
+  delivery, including before/after comparison sliders for rendered work.
+* **Modern Tech Stack:** Built with an Astro server-side rendered core and React components.
+* **Robust Testing:** Includes end-to-end testing powered by Playwright.
+
+## 🛠️ Tech Stack
+
+* **Framework:** Astro 5 (SSR) & React 19 islands
+* **Database:** Neon (Serverless Postgres)
+* **ORM:** Drizzle ORM
+* **Validation:** Zod
+* **Media & Services:** Cloudinary (Images) & Resend (Email APIs)
+* **Testing:** Playwright (end-to-end; this is the only test layer)
+
+## 🗺️ Roadmap
+
+**Current Status:** The site serves as a professional showcase for Adie's portfolio and commission
+prices, and now accepts commission requests directly rather than only via Discord and Instagram
+DMs.
+
+**Upcoming:**
+* Verified sending domain so client-facing confirmation email is delivered, not just artist
+  notifications (see Environment below).
+* Artist name threaded into email templates, which currently hardcode "Bred".
+
+*See `IMPLEMENTATION-NOTES.md` for code structure and `MIGRATION_GUIDE.md` for resetting database
+seeds. `CLAUDE.md` carries the conventions and the traps worth knowing before changing anything.*
 
 ---
 
