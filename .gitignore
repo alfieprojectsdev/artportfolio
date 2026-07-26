@@ -13,8 +13,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# environment variables
+# environment variables — .env.example is the only env file that may be committed
 .env
+.env.*
+!.env.example
 .env.production
 .env*.local
 
@@ -39,3 +41,11 @@ resend_API.md
 API_keys.md
 worktrees/
 .vercel
+
+# Session Logs (any directory — docs/ included)
+SESSION_LOG_*
+
+# Throwaway debugging artifacts — keep these out of the repo root.
+# See CLAUDE.md "Repo hygiene": scratch scripts belong in /tmp, not here.
+test_debug_*
+debug_*.log

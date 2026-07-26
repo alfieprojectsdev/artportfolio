@@ -1,5 +1,13 @@
 # NeonDB Branch Connection Guide
 
+> **Never paste a real connection string into this file.** Live credentials used to be inlined
+> throughout it and were pushed to a public repo. Placeholders only: copy the real string from the
+> Neon console into `.env.local`, which is gitignored.
+>
+> `drizzle.config.ts` now loads `.env.local` directly, so drizzle-kit commands no longer need an
+> inline `DATABASE_URL=...` prefix. To point at a different branch for one command, export it in
+> your shell — an already-set `DATABASE_URL` still wins over the file.
+
 > **Goal**: Connect local dev build to NeonDB dev branch for testing before deployment.
 
 ---
@@ -10,8 +18,8 @@ NeonDB has separate connection strings for each branch:
 
 | Branch | Connection Host | Status |
 |---------|----------------|---------|
-| **Production** | `ep-winter-wind-a14i26ba` | Live site data |
-| **Development** | `ep-soft-poetry-a1ctpgud` | Isolated test data |
+| **Production** | `<main-branch-endpoint>` | Live site data |
+| **Development** | `<dev-branch-endpoint>` | Isolated test data |
 
 ---
 
@@ -21,24 +29,24 @@ NeonDB has separate connection strings for each branch:
 
 ```bash
 # Currently using this connection (appears to be production):
-DATABASE_URL=postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-winter-wind-a14i26ba-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=postgresql://<user>:<password>@<main-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 
 # Dev branch connection (commented out):
-# DATABASE_URL=postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+# DATABASE_URL=postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ```
 
 ### Connection String Parts
 
 ```
 postgresql://
-  neondb_owner:npg_Pw7dLU1peQuJ@         # user:password
-  ep-winter-wind-a14i26ba-pooler        # HOST (identifies branch)
+  <user>:<password>@                      # credentials
+  <branch-endpoint>-pooler                # HOST (identifies branch)
   .ap-southeast-1.aws.neon.tech/          # Region & service
   neondb?                                 # Database name
   sslmode=require&channel_binding=require     # Connection options
 ```
 
-**Key identifier**: `ep-winter-wind-a14i26ba` (host) determines which branch you're connected to.
+**Key identifier**: `<main-branch-endpoint>` (host) determines which branch you're connected to.
 
 ---
 
@@ -50,10 +58,10 @@ postgresql://
 # File: /home/finch/repos/artportfolio/worktrees/astro-cms/.env
 
 # Comment out production:
-# DATABASE_URL=postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-winter-wind-a14i26ba-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+# DATABASE_URL=postgresql://<user>:<password>@<main-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 
 # Uncomment development:
-DATABASE_URL=postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ```
 
 ### Step 2: Restart Dev Server
@@ -80,7 +88,7 @@ npm run dev
 
 ```bash
 # Bash/Zsh
-export DATABASE_URL="postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+export DATABASE_URL="postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 cd /home/finch/repos/artportfolio/worktrees/astro-cms
 npm run dev
 ```
@@ -110,14 +118,14 @@ cp .env .env.development
 
 **`.env.production`**:
 ```bash
-DATABASE_URL=postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-winter-wind-a14i26ba-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=postgresql://<user>:<password>@<main-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 CLOUDINARY_CLOUD_NAME=your-cloud-name
 # ... rest of production config
 ```
 
 **`.env.development`**:
 ```bash
-DATABASE_URL=postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 CLOUDINARY_CLOUD_NAME=your-cloud-name
 # ... rest of dev config
 ```
@@ -202,7 +210,7 @@ VALUES ('Test Client', 'test@example.com', 'testuser', 'bust', 'flat', 'pending'
 Run seed:
 
 ```bash
-psql 'postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require' -f seed-dev.sql
+psql 'postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require' -f seed-dev.sql
 ```
 
 ---
@@ -213,7 +221,7 @@ psql 'postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.
 
 ```bash
 # 1. Switch to dev branch
-export DATABASE_URL="postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+export DATABASE_URL="postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # 2. Run local dev
 npm run dev
@@ -255,7 +263,7 @@ vercel --prod
 **Solution**:
 ```bash
 # Check if branch exists and URL is correct
-psql 'postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require' -c "SELECT version();"
+psql 'postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require' -c "SELECT version();"
 ```
 
 ### Issue: Tables Not Found
@@ -266,7 +274,7 @@ psql 'postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.
 
 ```bash
 # Ensure DATABASE_URL points to dev branch
-export DATABASE_URL="postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+export DATABASE_URL="postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # Generate migration from schema
 npx drizzle-kit generate
@@ -285,7 +293,7 @@ npx drizzle-kit push
 # Clear .env DATABASE_URL cache
 unset DATABASE_URL
 # Restart with new DATABASE_URL
-export DATABASE_URL="postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+export DATABASE_URL="postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 npm run dev
 ```
 
@@ -295,19 +303,19 @@ npm run dev
 
 ```bash
 # Connect to dev branch (temporary)
-export DATABASE_URL="postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+export DATABASE_URL="postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # Connect to production branch (temporary)
-export DATABASE_URL="postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-winter-wind-a14i26ba-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+export DATABASE_URL="postgresql://<user>:<password>@<main-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # Start dev server
 npm run dev
 
 # Direct SQL connection to dev
-psql 'postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-soft-poetry-a1ctpgud-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+psql 'postgresql://<user>:<password>@<dev-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
 
 # Direct SQL connection to production
-psql 'postgresql://neondb_owner:npg_Pw7dLU1peQuJ@ep-winter-wind-a14i26ba-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+psql 'postgresql://<user>:<password>@<main-branch-endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
 
 # Push schema to current branch
 npx drizzle-kit push
