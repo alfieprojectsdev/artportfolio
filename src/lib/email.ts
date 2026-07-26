@@ -142,12 +142,14 @@ export async function sendCommissionConfirmation(commission: CommissionEmailData
     return false;
   }
 
+  const replyTo = getArtistEmail();
+
   try {
     const { data, error } = await resend.emails.send({
       from: `Bred's Commissions <${getFromEmail()}>`,
       to: [commission.email],
       // Client replies reach the artist, not the send-only from address.
-      ...(getArtistEmail() ? { replyTo: getArtistEmail()! } : {}),
+      ...(replyTo ? { replyTo } : {}),
       subject: 'Commission Request Received!',
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -238,11 +240,14 @@ export async function sendStatusUpdateEmail(
     return false; // Don't send email for unknown status
   }
 
+  const replyTo = getArtistEmail();
+
   try {
     const { data, error } = await resend.emails.send({
       from: `Bred's Commissions <${getFromEmail()}>`,
       to: [clientEmail],
-      ...(getArtistEmail() ? { replyTo: getArtistEmail()! } : {}),
+      // Client replies reach the artist, not the send-only from address.
+      ...(replyTo ? { replyTo } : {}),
       subject: statusInfo.subject,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

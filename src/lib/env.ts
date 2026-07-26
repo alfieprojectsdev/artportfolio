@@ -71,9 +71,6 @@ export const DEFAULT_SITE_URL = 'https://artportfolio-sigma.vercel.app';
 export const siteUrl = () => env.SITE_URL ?? DEFAULT_SITE_URL;
 export const fromEmail = () => env.FROM_EMAIL ?? DEFAULT_FROM_EMAIL;
 
-/** True when email can actually be delivered to the artist. */
-export const canSendEmail = () => Boolean(env.RESEND_API_KEY && env.ARTIST_EMAIL);
-
 type Issue = { level: 'error' | 'warn'; message: string };
 
 function collectIssues(): Issue[] {
@@ -101,12 +98,25 @@ function collectIssues(): Issue[] {
   }
 
   if (env.RESEND_API_KEY && !env.ARTIST_EMAIL) {
-    issues.push({
-      level: 'error',
-      message:
-        'RESEND_API_KEY is set but ARTIST_EMAIL is not — new-commission notifications have nowhere to go ' +
-        'and will be skipped. Set ARTIST_EMAIL.',
-    });
+    // A malformed address fails validation and lands here as `undefined`, the
+    // same as never being set. Reporting both cases as "not set" would send you
+    // to the dashboard where the variable plainly is set — so say which it is.
+    issues.push(
+      raw.ARTIST_EMAIL
+        ? {
+            level: 'error',
+            message:
+              `ARTIST_EMAIL is set to ${JSON.stringify(raw.ARTIST_EMAIL)}, which is not a valid ` +
+              'email address, so it is being ignored. New-commission notifications will be skipped ' +
+              'until it is corrected.',
+          }
+        : {
+            level: 'error',
+            message:
+              'RESEND_API_KEY is set but ARTIST_EMAIL is not — new-commission notifications have ' +
+              'nowhere to go and will be skipped. Set ARTIST_EMAIL.',
+          }
+    );
   }
 
   if (!env.RESEND_API_KEY) {
