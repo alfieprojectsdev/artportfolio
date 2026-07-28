@@ -1,9 +1,8 @@
 import type { APIRoute } from 'astro';
 import { db, siteSettings } from '../../db';
-import { eq } from 'drizzle-orm';
 import { checkAuth, unauthorizedResponse } from '../../lib/auth';
 import { cleanText } from '../../lib/utils';
-import { DEFAULT_SITE_SETTINGS } from '../../lib/settings';
+import { DEFAULT_SITE_SETTINGS, SETTINGS_ROW_ID } from '../../lib/settings';
 import { SiteSettingsUpdateSchema, type SiteSettingsUpdate } from '../../lib/schemas';
 
 const json = (body: unknown, status = 200) =>
@@ -72,21 +71,25 @@ export const PUT: APIRoute = async ({ request }) => {
       }
     }
 
-    const [existing] = await db.select().from(siteSettings).limit(1);
-
-    let result;
-    if (existing) {
-      [result] = await db
-        .update(siteSettings)
-        .set({ ...updates, updatedAt: new Date() })
-        .where(eq(siteSettings.id, existing.id))
-        .returning();
-    } else {
-      [result] = await db
-        .insert(siteSettings)
-        .values({ ...DEFAULT_SITE_SETTINGS, ...updates })
-        .returning();
-    }
+    // Single atomic upsert rather than select-then-branch.
+    //
+    // The old read-decide-write was a TOCTOU race: two concurrent PUTs could
+    // both observe no row and both insert, leaving two site_settings rows for a
+    // table that must have exactly one. `limit(1)` would then pick between them
+    // arbitrarily, so the public page and the admin dashboard could disagree
+    // about prices. One admin makes that unlikely, not impossible.
+    //
+    // The insert branch seeds defaults for columns the payload omits; the
+    // conflict branch touches only what was sent, so a partial update cannot
+    // silently reset unrelated fields back to defaults.
+    const [result] = await db
+      .insert(siteSettings)
+      .values({ id: SETTINGS_ROW_ID, ...DEFAULT_SITE_SETTINGS, ...updates })
+      .onConflictDoUpdate({
+        target: siteSettings.id,
+        set: { ...updates, updatedAt: new Date() },
+      })
+      .returning();
 
     return json(result);
   } catch (error) {
