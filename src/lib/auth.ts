@@ -49,16 +49,29 @@ export function checkAuth(request: Request): boolean {
   }
 
   try {
-    const decoded = atob(credentials);
-    // A header without a colon yields `password === undefined`; `?? ''` keeps
-    // that a failed comparison rather than a thrown TypeError.
-    const [username, password] = decoded.split(':');
+    // Decode as UTF-8, not via atob(). atob() returns a byte-string — one
+    // character per byte — so a password containing any non-ASCII character
+    // hashes to different bytes than the value in the environment and can
+    // never authenticate.
+    const decoded = Buffer.from(credentials, 'base64').toString('utf8');
+
+    // RFC 7617: the user-id may not contain a colon, the password may. Split on
+    // the *first* colon only — `decoded.split(':')` would truncate a password
+    // like `pa:ss` to `pa`, locking the admin out of their own dashboard.
+    // A header with no colon at all yields an empty password, which cannot
+    // match: `expected` is non-empty by construction (env.ts requires min(1)).
+    const separator = decoded.indexOf(':');
+    const username = separator === -1 ? decoded : decoded.slice(0, separator);
+    const password = separator === -1 ? '' : decoded.slice(separator + 1);
 
     // The username is a public constant, not a secret, so a plain comparison
     // leaks nothing. Only the password needs constant-time treatment.
-    return username === 'admin' && constantTimeEquals(password ?? '', expected);
+    return username === 'admin' && constantTimeEquals(password, expected);
   } catch {
-    // Invalid base64 encoding
+    // Kept as a backstop. Unlike atob(), Buffer.from(..., 'base64') does not
+    // throw on malformed input — it drops invalid characters — so a bad header
+    // now fails as a mismatch rather than an exception. Either path returns
+    // false; neither can surface as a 500.
     return false;
   }
 }
