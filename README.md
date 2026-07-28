@@ -23,7 +23,7 @@ dynamic gallery and streamlined content management.
 * **ORM:** Drizzle ORM
 * **Validation:** Zod
 * **Media & Services:** Cloudinary (Images) & Resend (Email APIs)
-* **Testing:** Playwright (end-to-end; this is the only test layer)
+* **Testing:** Vitest (unit, pure helpers) & Playwright (end-to-end)
 
 ## 🗺️ Roadmap
 
@@ -60,12 +60,18 @@ admin dashboard will show a load error.
 | `npm run dev` | Astro dev server on port 4321 |
 | `npm run build` | Production build (Vercel adapter) |
 | `npm run preview` | Serve the production build locally |
+| `npm test` | Vitest unit suite, single run |
+| `npm run test:watch` | Vitest in watch mode |
 | `npm run test:e2e` | Playwright end-to-end suite |
 | `npm run test:e2e:ui` | Playwright in interactive UI mode |
 | `npm run test:e2e:report` | Open the last HTML report |
 
-There is no lint script and no unit-test runner. Playwright (`e2e/`) is the only test layer —
-`npm test` and `npm run lint` do not exist.
+Two test layers, and the split is deliberate: **Vitest** (`src/**/*.test.ts`) covers pure helpers
+with no database, network or fixtures, so it runs in well under a second. **Playwright** (`e2e/`)
+covers anything needing a running server or a real database. A unit test that wants a server
+belongs in `e2e/`.
+
+There is no lint script — `npm run lint` does not exist.
 
 ## Environment
 
