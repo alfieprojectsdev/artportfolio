@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
-import { db, commissionRequests } from '../../../db';
+import { db, commissionRequests, siteSettings } from '../../../db';
 import { eq } from 'drizzle-orm';
 import { checkAuth, unauthorizedResponse } from '../../../lib/auth';
 import { sendStatusUpdateEmail } from '../../../lib/email';
+import { resolveSiteConfig } from '../../../lib/settings';
 
 // PATCH /api/commissions/:id - Update commission status
 export const PATCH: APIRoute = async ({ params, request }) => {
@@ -52,13 +53,28 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
     // Send email notification if status changed (and sendEmail not explicitly false)
     if (body.status && body.status !== current.status && body.sendEmail !== false) {
-      sendStatusUpdateEmail(
+      const [settings] = await db.select().from(siteSettings).limit(1);
+      const { artistName } = resolveSiteConfig(settings);
+
+      // Awaited for the same reason as the submit action: on serverless the
+      // instance is suspended once the response is sent, which kills an
+      // unawaited fetch mid-request. Failures are logged, never surfaced —
+      // the status change itself is already committed above.
+      const sent = await sendStatusUpdateEmail(
         updated.email,
         updated.clientName,
         updated.id,
         body.status,
-        body.statusNote // Optional note to include in the email
-      ).catch(err => console.error('Status update email error:', err));
+        body.statusNote, // Optional note to include in the email
+        artistName
+      ).catch(err => {
+        console.error('Status update email error:', err);
+        return false;
+      });
+
+      if (!sent) {
+        console.warn(`[email] status update for commission #${updated.id} was not delivered`);
+      }
     }
 
     return new Response(JSON.stringify(updated), {

@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { escapeHtml, phpToUsd } from './utils';
 import { env, fromEmail, siteUrl } from './env';
+import { DEFAULT_SITE_SETTINGS } from './settings';
 
 // Lazy-initialize Resend client to avoid issues when API key is not set
 let resendClient: Resend | null = null;
@@ -46,7 +47,10 @@ interface CommissionEmailData {
 /**
  * Send notification to artist when a new commission is submitted
  */
-export async function sendNewCommissionNotification(commission: CommissionEmailData): Promise<boolean> {
+export async function sendNewCommissionNotification(
+  commission: CommissionEmailData,
+  artistName: string = DEFAULT_SITE_SETTINGS.artistName
+): Promise<boolean> {
   const resend = getResendClient();
   if (!resend) {
     console.log('RESEND_API_KEY not set, skipping email notification');
@@ -135,7 +139,10 @@ export async function sendNewCommissionNotification(commission: CommissionEmailD
 /**
  * Send confirmation email to client when their commission is submitted
  */
-export async function sendCommissionConfirmation(commission: CommissionEmailData): Promise<boolean> {
+export async function sendCommissionConfirmation(
+  commission: CommissionEmailData,
+  artistName: string = DEFAULT_SITE_SETTINGS.artistName
+): Promise<boolean> {
   const resend = getResendClient();
   if (!resend) {
     console.log('RESEND_API_KEY not set, skipping confirmation email');
@@ -146,7 +153,7 @@ export async function sendCommissionConfirmation(commission: CommissionEmailData
 
   try {
     const { data, error } = await resend.emails.send({
-      from: `Bred's Commissions <${getFromEmail()}>`,
+      from: `${artistName}'s Commissions <${getFromEmail()}>`,
       to: [commission.email],
       // Client replies reach the artist, not the send-only from address.
       ...(replyTo ? { replyTo } : {}),
@@ -174,7 +181,7 @@ export async function sendCommissionConfirmation(commission: CommissionEmailData
 
           <p style="margin-top: 30px;">
             Best,<br>
-            <strong style="color: #916A5D;">Bred</strong>
+            <strong style="color: #916A5D;">${escapeHtml(artistName)}</strong>
           </p>
 
           <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
@@ -208,7 +215,8 @@ export async function sendStatusUpdateEmail(
   clientName: string,
   commissionId: number,
   newStatus: string,
-  notes?: string
+  notes?: string,
+  artistName: string = DEFAULT_SITE_SETTINGS.artistName
 ): Promise<boolean> {
   const resend = getResendClient();
   if (!resend) {
@@ -244,7 +252,7 @@ export async function sendStatusUpdateEmail(
 
   try {
     const { data, error } = await resend.emails.send({
-      from: `Bred's Commissions <${getFromEmail()}>`,
+      from: `${artistName}'s Commissions <${getFromEmail()}>`,
       to: [clientEmail],
       // Client replies reach the artist, not the send-only from address.
       ...(replyTo ? { replyTo } : {}),
@@ -259,14 +267,14 @@ export async function sendStatusUpdateEmail(
 
           ${notes ? `
           <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <strong>Note from Bred:</strong>
+            <strong>Note from ${escapeHtml(artistName)}:</strong>
             <p style="margin: 10px 0 0;">${escapeHtml(notes)}</p>
           </div>
           ` : ''}
 
           <p style="margin-top: 30px;">
             Best,<br>
-            <strong style="color: #916A5D;">Bred</strong>
+            <strong style="color: #916A5D;">${escapeHtml(artistName)}</strong>
           </p>
 
           <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">

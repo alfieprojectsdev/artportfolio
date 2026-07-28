@@ -1,6 +1,7 @@
 import { defineAction } from 'astro:actions';
 import { db, commissionRequests, siteSettings } from '../db';
 import { CommissionRequestSchema, calculateEstimatedPrice, pricingFromSettings } from '../lib/schemas';
+import { resolveSiteConfig } from '../lib/settings';
 import { sendNewCommissionNotification, sendCommissionConfirmation } from '../lib/email';
 
 /**
@@ -33,6 +34,9 @@ export const server = {
         // Price from the live settings row, so admin price edits take effect
         // immediately. Falls back to DEFAULT_PRICING if the row is missing.
         const [settings] = await db.select().from(siteSettings).limit(1);
+        // Same row also names the artist in the email templates, so renaming in
+        // /admin no longer leaves the emails stale.
+        const { artistName } = resolveSiteConfig(settings);
         const estimatedPrice = calculateEstimatedPrice(
           input.artType,
           input.style,
@@ -79,7 +83,7 @@ export const server = {
               description: newRequest.description,
               estimatedPrice: newRequest.estimatedPrice,
               refImages: newRequest.refImages || [],
-            }),
+            }, artistName),
             'artist notification'
           ),
           withTimeout(
@@ -91,7 +95,7 @@ export const server = {
               style: newRequest.style,
               description: newRequest.description,
               estimatedPrice: newRequest.estimatedPrice,
-            }),
+            }, artistName),
             'client confirmation'
           ),
         ]);
