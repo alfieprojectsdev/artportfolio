@@ -3,6 +3,20 @@ import { cleanText } from './utils';
 import type { SiteSettings } from '../db/schema';
 
 /**
+ * `site_settings` holds exactly one row, and this is its primary key.
+ *
+ * It is 0, not 1 — the row was seeded by hand. That matters: pinning the write
+ * to an assumed `1` would insert a *second* row instead of updating the
+ * existing one, after which `limit(1)` picks between them arbitrarily and the
+ * public page and admin dashboard can disagree about prices. Closed PR #13
+ * made exactly that mistake.
+ *
+ * Verified 0 on both Neon branches. Confirm against the database before
+ * changing it.
+ */
+export const SETTINGS_ROW_ID = 0;
+
+/**
  * Values used when the site_settings row is missing or a field is blank.
  *
  * One copy. This blob previously existed three times (index.astro, the
