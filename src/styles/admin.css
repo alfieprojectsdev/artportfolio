@@ -424,6 +424,17 @@ button[type='submit']:disabled,
 
 .gallery-list-item .item-info {
   flex: 1;
+  /* A flex item defaults to min-width:auto, so a long unbroken title like
+     "angentela_commission" refuses to shrink and pushes the Delete button out
+     of the card. min-width:0 lets it shrink; overflow-wrap gives it somewhere
+     to break, since underscores are not break opportunities. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Never let the button be squeezed below its label — it was rendering as "De". */
+.gallery-list-item .delete-btn {
+  flex-shrink: 0;
 }
 
 .gallery-list-item .separator {
