@@ -44,6 +44,31 @@ export function phpToUsd(php: number): number {
     return Math.round(php / PHP_PER_USD);
 }
 
+/**
+ * The artist's timezone. Prices are in PHP and the artist is in the
+ * Philippines, so dates rendered on the server belong in Manila time.
+ */
+export const SITE_TIMEZONE = 'Asia/Manila';
+
+/**
+ * Format a timestamp for server-rendered output (currently only email).
+ *
+ * `toLocaleString()` with no arguments uses the *runtime's* locale and
+ * timezone. On Vercel that is UTC, so a commission submitted at 14:03 in
+ * Manila was announced as "6:03 AM" — eight hours out, and read as the middle
+ * of the night.
+ *
+ * Anything rendered in the browser (the admin dashboard) should keep using the
+ * bare `toLocaleString()`, which correctly picks up the viewer's own timezone.
+ */
+export function formatSiteDateTime(date: Date = new Date()): string {
+    return date.toLocaleString('en-PH', {
+        timeZone: SITE_TIMEZONE,
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    });
+}
+
 export function escapeHtml(unsafe: string): string {
     return unsafe
         .replace(/&/g, "&amp;")

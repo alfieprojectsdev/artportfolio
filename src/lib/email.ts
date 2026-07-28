@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { escapeHtml, phpToUsd } from './utils';
+import { escapeHtml, phpToUsd, formatSiteDateTime } from './utils';
 import { env, fromEmail, siteUrl } from './env';
 import { DEFAULT_SITE_SETTINGS } from './settings';
 
@@ -117,7 +117,7 @@ export async function sendNewCommissionNotification(
           </div>
 
           <p style="color: #666; font-size: 12px; margin-top: 30px; text-align: center;">
-            Commission #${commission.id} - Submitted ${new Date().toLocaleString()}
+            Commission #${commission.id} - Submitted ${formatSiteDateTime()}
           </p>
         </div>
       `,
