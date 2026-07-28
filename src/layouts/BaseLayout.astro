@@ -31,6 +31,15 @@ const { title, description, theme, noindex = false } = Astro.props;
   {description && <meta name="description" content={description}>}
   {noindex && <meta name="robots" content="noindex, nofollow">}
 
+  <!--
+    The artist's avatar doubles as the site icon. Nothing was ever linked here,
+    so browsers fell back to /favicon.ico (404) — and while the domain was
+    parked they picked up the registrar's icon instead. Favicons are cached
+    hard, so a stale one may need a forced refresh to clear.
+  -->
+  <link rel="icon" type="image/jpeg" href="/assets/profile.jpg">
+  <link rel="apple-touch-icon" href="/assets/profile.jpg">
+
   <!-- Fonts: one request covers both themes -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
