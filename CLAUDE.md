@@ -11,10 +11,9 @@ single-admin, small enough that architecture decisions favor "obvious and correc
 - **Cloudinary** for image hosting (uploads, thumbnails, comparison-slider variants)
 - **Resend** for commission-notification emails
 - **Zod** for input validation (`src/lib/schemas.ts`)
-- **Playwright** for e2e (`e2e/`) — this is the *only* test layer; there is no unit-test runner
-  configured (no Vitest, no `*.test.ts`). One historical commit message claims a fix was
-  "verified with unit tests" — that verification, if it happened, was never committed to this
-  repo. Don't trust commit-message test claims here without checking `e2e/` yourself.
+- **Vitest** for unit tests (`src/**/*.test.ts`) — pure helpers only: no database, no network, no
+  fixtures. **Playwright** for e2e (`e2e/`) — anything needing a running server or a real database.
+  Keep that split; a unit test that wants a server belongs in `e2e/`.
 
 ## Data model (`src/db/schema.ts`)
 
@@ -170,13 +169,15 @@ is how a live connection string ended up pasted into `NEONDB_BRANCH_SETUP.md`.
 ```
 npm run dev              # astro dev
 npm run build             # astro build
+npm test                  # vitest run (unit)
+npm run test:watch        # vitest (watch)
 npm run test:e2e          # playwright test
 npm run test:e2e:ui       # playwright test --ui (interactive)
 npm run test:e2e:report   # view last report
 ```
 
-No lint or unit-test script exists in `package.json` — don't assume `npm test` or `npm run lint`
-work here; they don't.
+`npm test` runs Vitest once; `npm run test:watch` keeps it running. No lint script exists —
+don't assume `npm run lint` works here; it doesn't.
 
 ## Database branches — which is which
 
