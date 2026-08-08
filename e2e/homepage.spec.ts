@@ -7,6 +7,16 @@ test.describe('Homepage', () => {
   });
 
   test.describe('Hero Section', () => {
+    // playwright.config.ts sets fullyParallel: true, which schedules every
+    // test independently regardless of file or describe grouping — tests in
+    // one file are NOT guaranteed to run in order just because they're in the
+    // same file. The two avatar tests below share the site_settings row's
+    // avatar_url column, so without this they can interleave: one test's PUT
+    // window can be live while the other's page.goto() reads the same field,
+    // producing an intermittent failure that has nothing to do with the code
+    // under test. Same hazard admin-settings.spec.ts already guards against.
+    test.describe.configure({ mode: 'serial' });
+
     test('displays profile image, falling back to the bundled default', async ({ page }) => {
       // site_settings.avatar_url is null in the seeded row, so this exercises
       // resolveSiteConfig's fallback rather than a hardcoded path — see the
