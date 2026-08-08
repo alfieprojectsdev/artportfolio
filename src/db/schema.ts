@@ -37,6 +37,7 @@ export const siteSettings = pgTable('site_settings', {
   id: serial('id').primaryKey(),
   commissionStatus: text('commission_status').default('open'), // 'open', 'closed', 'waitlist'
   artistName: text('artist_name').default('Bred'),
+  avatarUrl: text('avatar_url'),                // Cloudinary URL; falls back to the bundled default
   bio: text('bio'),
   instagram: text('instagram'),
   discord: text('discord'),

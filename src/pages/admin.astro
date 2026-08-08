@@ -27,7 +27,12 @@ const cloudName = env.CLOUDINARY_CLOUD_NAME ?? '';
 const uploadPreset = env.CLOUDINARY_UPLOAD_PRESET ?? '';
 ---
 
-<BaseLayout title={`Admin Dashboard - ${config.artistName}'s Commissions`} theme="admin" noindex>
+<BaseLayout
+  title={`Admin Dashboard - ${config.artistName}'s Commissions`}
+  theme="admin"
+  noindex
+  avatarUrl={config.avatarUrl}
+>
   <header class="admin-header">
     <h1>{config.artistName}'s Portfolio Admin</h1>
     <a href="/" target="_blank" rel="noopener">View Site &rarr;</a>

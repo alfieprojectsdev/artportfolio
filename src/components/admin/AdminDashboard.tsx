@@ -666,6 +666,35 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
             <fieldset className="form-fieldset">
               <legend>Artist Profile</legend>
               <div className="form-group">
+                <label>Profile Picture</label>
+                <p className="field-hint">Shown on the site header and used as the browser tab icon</p>
+                {settings.avatarUrl ? (
+                  <div className="preview-image">
+                    <img src={thumb(settings.avatarUrl, 'w_200,h_200,c_fill')} alt="Profile picture preview" />
+                    <button
+                      type="button"
+                      onClick={() => setSettings(prev => prev ? { ...prev, avatarUrl: null } : null)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <CloudinaryUploadWidget
+                    key="avatar-upload"
+                    id="avatar-upload"
+                    cloudName={cloudName}
+                    uploadPreset={uploadPreset}
+                    onUpload={result =>
+                      setSettings(prev => (prev ? { ...prev, avatarUrl: result.secure_url } : null))
+                    }
+                  />
+                )}
+                {!settings.avatarUrl && (
+                  <p className="field-hint">Falls back to the default picture until one is uploaded</p>
+                )}
+              </div>
+
+              <div className="form-group">
                 <label htmlFor="artist-name">
                   Artist Name <span className="required-marker">*</span>
                 </label>

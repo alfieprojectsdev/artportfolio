@@ -103,6 +103,11 @@ export const SiteSettingsUpdateSchema = z.object({
     .min(1, 'Artist name is required and cannot be empty')
     .max(100, 'Artist name must be less than 100 characters')
     .optional(),
+  // Cloudinary always returns https://res.cloudinary.com/..., but the default
+  // is a root-relative /assets/profile.jpg — url() would reject that, so this
+  // only checks length, and the display fallback in resolveSiteConfig covers
+  // an unset or blank value.
+  avatarUrl: z.string().max(2000).nullish(),
   bio: z.string().max(2000).nullish(),
   instagram: z.string().max(100).nullish(),
   discord: z.string().max(100).nullish(),

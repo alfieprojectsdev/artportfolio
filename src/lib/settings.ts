@@ -1,5 +1,5 @@
 import { DEFAULT_PRICING } from './schemas';
-import { cleanText } from './utils';
+import { cleanText, sanitizeString } from './utils';
 import type { SiteSettings } from '../db/schema';
 
 /**
@@ -12,6 +12,7 @@ import type { SiteSettings } from '../db/schema';
 export const DEFAULT_SITE_SETTINGS = {
   commissionStatus: 'open',
   artistName: 'Bred',
+  avatarUrl: '/assets/profile.jpg',
   bio: "Hello, I'm Bred! I'm a senior student doing commissions and art on the side. If you like my style, I'd love to work with you! :D",
   instagram: 'demented.toast',
   discord: 'toasted_insanity',
@@ -47,6 +48,10 @@ export function resolveSiteConfig(settings: SiteSettings | null | undefined): Si
     ...DEFAULT_SITE_SETTINGS,
     ...(settings ?? {}),
     artistName: cleanText(settings?.artistName) || DEFAULT_SITE_SETTINGS.artistName,
+    // A URL, not free text — sanitizeString (blank/whitespace fallback) rather
+    // than cleanText, whose quote-repair exists for prose and has no business
+    // touching a Cloudinary URL.
+    avatarUrl: sanitizeString(settings?.avatarUrl) || DEFAULT_SITE_SETTINGS.avatarUrl,
     commissionStatus:
       cleanText(settings?.commissionStatus) || DEFAULT_SITE_SETTINGS.commissionStatus,
     bio: cleanText(settings?.bio) || DEFAULT_SITE_SETTINGS.bio,

@@ -7,11 +7,46 @@ test.describe('Homepage', () => {
   });
 
   test.describe('Hero Section', () => {
-    test('displays profile image', async ({ page }) => {
+    test('displays profile image, falling back to the bundled default', async ({ page }) => {
+      // site_settings.avatar_url is null in the seeded row, so this exercises
+      // resolveSiteConfig's fallback rather than a hardcoded path — see the
+      // "renders an uploaded avatar" test below for the non-default path.
       await page.goto('/');
       const profileImage = page.locator('.profile-pic');
       await expect(profileImage).toBeVisible();
       await expect(profileImage).toHaveAttribute('src', '/assets/profile.jpg');
+    });
+
+    test('renders an uploaded avatar and reverts to the default on removal', async ({ page, request }) => {
+      // No real Cloudinary upload here — same limitation as the gallery image
+      // widgets, which have no e2e coverage of the upload flow itself. This
+      // exercises the read path: PUT a URL, confirm it renders, then PUT null
+      // and confirm the fallback returns. Mirrors commission-form.spec.ts's
+      // use of `request` for direct API calls.
+      const auth = 'Basic ' + Buffer.from(`admin:${process.env.ADMIN_PASSWORD || 'test-password'}`).toString('base64');
+      const uploadedUrl = 'https://res.cloudinary.com/demo/image/upload/w_200,h_200,c_fill/e2e-avatar-test.jpg';
+
+      const put = await request.put('/api/settings', {
+        headers: { Authorization: auth, 'Content-Type': 'application/json' },
+        data: { avatarUrl: uploadedUrl },
+      });
+      expect(put.ok()).toBeTruthy();
+
+      try {
+        await page.goto('/');
+        await expect(page.locator('.profile-pic')).toHaveAttribute('src', uploadedUrl);
+      } finally {
+        // Always revert, even if the assertion above fails, so this test
+        // cannot leave the settings row in a state that breaks other tests.
+        const reset = await request.put('/api/settings', {
+          headers: { Authorization: auth, 'Content-Type': 'application/json' },
+          data: { avatarUrl: null },
+        });
+        expect(reset.ok()).toBeTruthy();
+      }
+
+      await page.goto('/');
+      await expect(page.locator('.profile-pic')).toHaveAttribute('src', '/assets/profile.jpg');
     });
 
     test('displays artist name heading', async ({ page }) => {

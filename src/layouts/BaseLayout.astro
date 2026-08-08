@@ -17,9 +17,11 @@ interface Props {
   theme: 'public' | 'admin';
   /** Keep the page out of search results (admin). */
   noindex?: boolean;
+  /** Site icon. Defaults to the bundled asset if a page has no settings row to read. */
+  avatarUrl?: string;
 }
 
-const { title, description, theme, noindex = false } = Astro.props;
+const { title, description, theme, noindex = false, avatarUrl = '/assets/profile.jpg' } = Astro.props;
 ---
 
 <!DOCTYPE html>
@@ -36,9 +38,13 @@ const { title, description, theme, noindex = false } = Astro.props;
     so browsers fell back to /favicon.ico (404) — and while the domain was
     parked they picked up the registrar's icon instead. Favicons are cached
     hard, so a stale one may need a forced refresh to clear.
+
+    No `type` attribute: the avatar can now be uploaded as png/jpg/gif/webp
+    (see CloudinaryUploadWidget's clientAllowedFormats), and browsers sniff
+    icon type fine without it.
   -->
-  <link rel="icon" type="image/jpeg" href="/assets/profile.jpg">
-  <link rel="apple-touch-icon" href="/assets/profile.jpg">
+  <link rel="icon" href={avatarUrl}>
+  <link rel="apple-touch-icon" href={avatarUrl}>
 
   <!-- Fonts: one request covers both themes -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
