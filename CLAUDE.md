@@ -86,9 +86,20 @@ and `debug_investigation.log` were deleted, and `V0_INTEGRATION_PLAN.md` moved i
 
 **Don't add new files in that pattern.** Session notes go in `docs/` (they stay gitignored via
 `SESSION_LOG_*`); throwaway debugging scripts go outside the repo (`/tmp`) or get deleted when
-done. Several root-level planning docs from the original build (`ASTRO_CMS_IMPLEMENTATION_PLAN.md`,
-`MIGRATION_GUIDE.md`, `SETUP_CHECKLIST.md`, `NEONDB_BRANCH_SETUP.md`, …) are still in the root and
-were left alone — moving them is a separate call.
+done.
+
+Where a document belongs:
+
+| Location | For | Tracked |
+| --- | --- | --- |
+| `README.md`, `CLAUDE.md` | Things every contributor needs | yes |
+| `docs/` | Design notes and plans worth keeping | yes (except `SESSION_LOG_*`) |
+| `notes/` | One-off local material — evaluation reports, shopping lists, superseded plans | **no** |
+
+`notes/` was added 2026-07-28 when five unreferenced root-level docs were untracked
+(`JULES_EVALUATION_REPORT.md`, `PROJECT_MEMO.md`, `domain-options.md`, `v0-INTEGRATION.md`,
+`v0 UI-UX Analysis.md`). They remain on disk. The remaining root docs are kept because README or
+this file links to them — check for references before untracking anything else.
 
 **Secrets:** a live Neon connection string was committed to this *public* repo in
 `NEONDB_BRANCH_SETUP.md` and two session logs. The working tree was redacted on 2026-07-26, but
