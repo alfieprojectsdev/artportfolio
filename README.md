@@ -27,14 +27,27 @@ dynamic gallery and streamlined content management.
 
 ## 🗺️ Roadmap
 
-**Current Status:** The site serves as a professional showcase for Adie's portfolio and commission
-prices, and now accepts commission requests directly rather than only via Discord and Instagram
-DMs.
+**Current Status:** Live at **[dementedb.red](https://dementedb.red)**. The site serves as a
+professional showcase for the artist's portfolio and commission prices, and accepts commission
+requests directly rather than only via Discord and Instagram DMs.
 
-**Upcoming:**
-* Verified sending domain so client-facing confirmation email is delivered, not just artist
-  notifications (see Environment below).
-* Artist name threaded into email templates, which currently hardcode "Bred".
+**Notifications are working.** A submitted request is committed to the database first, then the
+artist is emailed and the client gets a confirmation. Because the record is written before any
+email is attempted, `/admin` → Commissions is the reliable source of truth: a mail failure can
+never lose a request.
+
+**Recent updates:**
+* Custom domain with TLS on both the apex and `www`, and a Resend-verified sending domain — so
+  client-facing confirmation and status emails are delivered, not just artist notifications.
+* Commission emails are awaited rather than fired and forgotten. Unawaited sends were being killed
+  mid-request when the serverless instance suspended, so no email had ever actually left the app.
+* Email templates take the artist's name from site settings instead of hardcoding it, so renaming
+  in `/admin` propagates.
+* Server-rendered timestamps are pinned to `Asia/Manila` rather than the runtime's UTC.
+* Page CSS moved out of scoped Astro `<style>` blocks — see *Styling* below; this is the one
+  convention worth reading before touching any stylesheet.
+
+**Upcoming:** tracked in [issues](https://github.com/alfieprojectsdev/artportfolio/issues).
 
 *See `IMPLEMENTATION-NOTES.md` for code structure and `MIGRATION_GUIDE.md` for resetting database
 seeds. `CLAUDE.md` carries the conventions and the traps worth knowing before changing anything.*
