@@ -67,6 +67,25 @@ applied to every user-supplied field in the notification email.
 `escapeHtml()` before landing in the HTML string.** This is the one security pattern in the
 codebase most likely to regress silently, since it's easy to add a field and forget the escape.
 
+## Commission intake guards (`src/actions/index.ts`)
+
+- `submitCommission` refuses with `FORBIDDEN` unless `commissionStatus === 'open'`: the same test
+  `index.astro` uses to show the form. Before this, a direct POST to `/_actions/submitCommission`
+  was saved and emailed while the site said CLOSED. Waitlist still counts as closed on both sides.
+- The client confirmation goes to whatever address was typed and quotes the submission back, so
+  it's capped by `CONFIRMATION_LIMITS` (per address per day, site-wide per hour and per day),
+  counted from `commission_requests` in SQL. Over a cap, the request is still saved and the
+  artist still notified; only the confirmation is skipped, with a `[email]` warning. A counting
+  error fails open (sends). Keep that shape: no visible change for a real client.
+
+## Images and the upload widget
+
+`src/lib/cloudinary.ts` holds `cloudinaryTransform()` and the one widget-script loader. The public
+page requests sized copies for the avatar/icon and the comparison slider; the lightbox still
+opens the original on purpose. The helper leaves non-Cloudinary paths and URLs that already carry
+delivery params untouched (`homepage.spec.ts` asserts an exact pre-transformed avatar URL).
+Don't put the widget `<script>` back in `<head>`: it blocked first paint on every visit.
+
 ## Input allowlists on write routes
 
 `PUT /api/settings` used to spread `...body` straight into the update, so a client could write
@@ -211,4 +230,6 @@ All three failure modes were verified to abort. Keep the guard failing closed if
   (`astro.config.mjs`). The toolbar sits bottom-centre and intercepts clicks on the lightbox
   prev/next controls. Don't remove it.
 
-Full suite: 159 tests, all passing as of 2026-07-26.
+Full suite: 161 tests, all passing as of 2026-09-24. `admin-auth.spec.ts` "displays navigation
+tabs" can fail once on a cold dev server (the `client:only` island mounts after the 5s expect
+timeout while Vite compiles it under parallel load); it passes on re-run.
