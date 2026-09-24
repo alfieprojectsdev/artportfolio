@@ -1,57 +1,13 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { loadCloudinaryScript, type CloudinaryUploadResult } from '../../lib/cloudinary';
+
+export type { CloudinaryUploadResult };
 
 interface CloudinaryUploadWidgetProps {
   onUpload: (result: CloudinaryUploadResult) => void;
   cloudName: string;
   uploadPreset: string;
   id?: string; // Unique identifier for this widget instance
-}
-
-export interface CloudinaryUploadResult {
-  secure_url: string;
-  public_id: string;
-  width: number;
-  height: number;
-  format: string;
-  bytes: number;
-}
-
-declare global {
-  interface Window {
-    cloudinary: {
-      createUploadWidget: (
-        options: Record<string, unknown>,
-        callback: (error: Error | null, result: { event: string; info: CloudinaryUploadResult }) => void
-      ) => { open: () => void; destroy: () => void };
-    };
-    cloudinaryScriptLoaded?: boolean;
-    cloudinaryScriptLoading?: Promise<void>;
-  }
-}
-
-// Load script once globally
-function loadCloudinaryScript(): Promise<void> {
-  if (window.cloudinaryScriptLoaded) {
-    return Promise.resolve();
-  }
-
-  if (window.cloudinaryScriptLoading) {
-    return window.cloudinaryScriptLoading;
-  }
-
-  window.cloudinaryScriptLoading = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
-    script.async = true;
-    script.onload = () => {
-      window.cloudinaryScriptLoaded = true;
-      resolve();
-    };
-    script.onerror = () => reject(new Error('Failed to load Cloudinary widget'));
-    document.body.appendChild(script);
-  });
-
-  return window.cloudinaryScriptLoading;
 }
 
 export default function CloudinaryUploadWidget({

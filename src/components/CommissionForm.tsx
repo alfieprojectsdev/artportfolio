@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { actions } from 'astro:actions';
 import { DEFAULT_PRICING, type ArtType, type PricingTable, type Style } from '../lib/schemas';
 import { phpToUsd } from '../lib/utils';
+import { loadCloudinaryScript } from '../lib/cloudinary';
 
 interface CommissionFormProps {
   cloudName: string;
@@ -47,13 +48,30 @@ export default function CommissionForm({
     }
   };
 
-  const handleImageUpload = useCallback(() => {
+  // Start fetching the upload widget once the form is on screen, so it is
+  // normally ready before anyone reaches "Add Reference". It used to be a
+  // render-blocking <script> in the page <head>, loaded even when commissions
+  // were closed and this form never rendered.
+  useEffect(() => {
+    if (isOpen) {
+      loadCloudinaryScript().catch(err => console.error('Upload error:', err));
+    }
+  }, [isOpen]);
+
+  const handleImageUpload = useCallback(async () => {
     if (formData.refImages.length >= 5) {
       alert('Maximum 5 reference images allowed');
       return;
     }
 
-    // @ts-ignore - Cloudinary widget types
+    try {
+      await loadCloudinaryScript();
+    } catch {
+      // Already logged by the preload above. Same outcome as before: the
+      // button does nothing if the widget script cannot be fetched.
+      return;
+    }
+
     if (window.cloudinary) {
       const widget = window.cloudinary.createUploadWidget(
         {
