@@ -69,9 +69,16 @@ codebase most likely to regress silently, since it's easy to add a field and for
 
 ## Commission intake guards (`src/actions/index.ts`)
 
-- `submitCommission` refuses with `FORBIDDEN` unless `commissionStatus === 'open'`: the same test
-  `index.astro` uses to show the form. Before this, a direct POST to `/_actions/submitCommission`
-  was saved and emailed while the site said CLOSED. Waitlist still counts as closed on both sides.
+- `submitCommission` refuses with `FORBIDDEN` unless `acceptsRequests(commissionStatus)`
+  (`src/lib/schemas.ts`): the same test `index.astro` uses to show the form. Before this, a direct
+  POST to `/_actions/submitCommission` was saved and emailed while the site said CLOSED.
+- Availability `waitlist` accepts requests (it used to behave exactly like `closed`). They're saved
+  with commission status `waitlisted`, the form and both emails say "waitlist", and the admin
+  filters and badges treat it as its own status. `status` is a text column: no migration.
+- Admin status changes go through a confirm dialog with an "email the client" checkbox and an
+  optional note (`sendEmail` / `statusNote` on the PATCH). The row dropdown used to save and email
+  on change. `PATCH /api/commissions/:id` rejects unknown statuses and reports the email outcome
+  in an `X-Status-Email: sent | failed | none` header, so the body stays the plain row.
 - The client confirmation goes to whatever address was typed and quotes the submission back, so
   it's capped by `CONFIRMATION_LIMITS` (per address per day, site-wide per hour and per day),
   counted from `commission_requests` in SQL. Over a cap, the request is still saved and the
