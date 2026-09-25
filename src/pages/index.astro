@@ -5,7 +5,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ArtSlider from '../components/ArtSlider.astro';
 import CommissionForm from '../components/CommissionForm';
 import { resolveSiteConfig } from '../lib/settings';
-import { pricingFromSettings, PRICED_ART_TYPES } from '../lib/schemas';
+import { acceptsRequests, pricingFromSettings, PRICED_ART_TYPES } from '../lib/schemas';
 import { phpToUsd } from '../lib/utils';
 import { env } from '../lib/env';
 import { cloudinaryTransform } from '../lib/cloudinary';
@@ -199,7 +199,8 @@ const categories = galleryItems.length > 0
         client:load
         cloudName={env.CLOUDINARY_CLOUD_NAME ?? ''}
         uploadPreset={env.CLOUDINARY_UPLOAD_PRESET ?? ''}
-        isOpen={config.commissionStatus === 'open'}
+        isOpen={acceptsRequests(config.commissionStatus)}
+        waitlist={config.commissionStatus === 'waitlist'}
         pricing={pricing}
       />
     </section>

@@ -3,12 +3,27 @@ import { z } from 'zod';
 // Commission Types - synced between frontend and backend
 export const ArtTypeEnum = z.enum(['bust', 'half', 'full', 'chibi', 'custom']);
 export const StyleEnum = z.enum(['sketch', 'flat', 'rendered']);
-export const CommissionStatusEnum = z.enum(['pending', 'accepted', 'in_progress', 'completed', 'declined']);
+// `waitlisted` is what a request gets when it arrives while availability is
+// `waitlist`, so the artist can tell it apart from a normal pending request.
+export const CommissionStatusEnum = z.enum(['pending', 'waitlisted', 'accepted', 'in_progress', 'completed', 'declined']);
 export const CommissionAvailabilityEnum = z.enum(['open', 'closed', 'waitlist']);
 
 export type ArtType = z.infer<typeof ArtTypeEnum>;
 export type Style = z.infer<typeof StyleEnum>;
 export type CommissionStatus = z.infer<typeof CommissionStatusEnum>;
+export type CommissionAvailability = z.infer<typeof CommissionAvailabilityEnum>;
+
+/**
+ * Whether the public form takes requests. `waitlist` does: the request is
+ * saved as `waitlisted` rather than `pending`. The page (to show the form) and
+ * the submit action (to accept it) must use this same test.
+ */
+export function acceptsRequests(availability: string | null | undefined): boolean {
+  return availability === 'open' || availability === 'waitlist';
+}
+
+/** Statuses that have a client email template in lib/email.ts. */
+export const EMAILED_STATUSES: readonly CommissionStatus[] = ['accepted', 'in_progress', 'completed', 'declined'];
 
 /** Art types that carry a price. `custom` is quote-only. */
 export const PRICED_ART_TYPES = ['bust', 'half', 'full', 'chibi'] as const;
