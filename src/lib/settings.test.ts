@@ -1,14 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_SITE_SETTINGS, resolveSiteConfig } from './settings';
+import { DEFAULT_SITE_SETTINGS, SETTINGS_ROW_ID, resolveSiteConfig } from './settings';
 import type { SiteSettings } from '../db/schema';
 
 /** A settings row with only the fields a given test cares about. */
 const row = (overrides: Partial<SiteSettings>) => overrides as SiteSettings;
 
-// Note: `SETTINGS_ROW_ID` is introduced by the atomic-upsert change (#48) and
-// does not exist on master, so it is not asserted here. Worth covering once
-// both that change and this runner have landed — the constant being 0 rather
-// than 1 is load-bearing.
+describe('SETTINGS_ROW_ID', () => {
+  it('is 0, the id of the hand-seeded row', () => {
+    // PUT /api/settings upserts on this id. The live row is 0 (checked on
+    // production 2026-09-25); an assumed 1 would insert a second row instead
+    // of updating, and limit(1) would then pick between them arbitrarily.
+    expect(SETTINGS_ROW_ID).toBe(0);
+  });
+});
 
 describe('resolveSiteConfig', () => {
   it('returns the defaults when there is no row', () => {
