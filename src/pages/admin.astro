@@ -5,6 +5,7 @@ import { checkAuth, unauthorizedResponse } from '../lib/auth';
 import { db, siteSettings } from '../db';
 import { resolveSiteConfig } from '../lib/settings';
 import { env } from '../lib/env';
+import { cloudinaryTransform } from '../lib/cloudinary';
 import '../styles/admin.css';
 
 // Same Basic Auth check the API routes use. Previously reimplemented inline
@@ -27,7 +28,12 @@ const cloudName = env.CLOUDINARY_CLOUD_NAME ?? '';
 const uploadPreset = env.CLOUDINARY_UPLOAD_PRESET ?? '';
 ---
 
-<BaseLayout title={`Admin Dashboard - ${config.artistName}'s Commissions`} theme="admin" noindex>
+<BaseLayout
+  title={`Admin Dashboard - ${config.artistName}'s Commissions`}
+  theme="admin"
+  noindex
+  avatarUrl={cloudinaryTransform(config.avatarUrl, 'c_fill,w_256,h_256,f_auto,q_auto')}
+>
   <header class="admin-header">
     <h1>{config.artistName}'s Portfolio Admin</h1>
     <a href="/" target="_blank" rel="noopener">View Site &rarr;</a>

@@ -11,10 +11,9 @@ single-admin, small enough that architecture decisions favor "obvious and correc
 - **Cloudinary** for image hosting (uploads, thumbnails, comparison-slider variants)
 - **Resend** for commission-notification emails
 - **Zod** for input validation (`src/lib/schemas.ts`)
-- **Playwright** for e2e (`e2e/`) — this is the *only* test layer; there is no unit-test runner
-  configured (no Vitest, no `*.test.ts`). One historical commit message claims a fix was
-  "verified with unit tests" — that verification, if it happened, was never committed to this
-  repo. Don't trust commit-message test claims here without checking `e2e/` yourself.
+- **Vitest** for unit tests (`src/**/*.test.ts`) — pure helpers only: no database, no network, no
+  fixtures. **Playwright** for e2e (`e2e/`) — anything needing a running server or a real database.
+  Keep that split; a unit test that wants a server belongs in `e2e/`.
 
 ## Data model (`src/db/schema.ts`)
 
@@ -66,6 +65,32 @@ applied to every user-supplied field in the notification email.
 **If you add a new field to the commission form or the email template, it must go through
 `escapeHtml()` before landing in the HTML string.** This is the one security pattern in the
 codebase most likely to regress silently, since it's easy to add a field and forget the escape.
+
+## Commission intake guards (`src/actions/index.ts`)
+
+- `submitCommission` refuses with `FORBIDDEN` unless `acceptsRequests(commissionStatus)`
+  (`src/lib/schemas.ts`): the same test `index.astro` uses to show the form. Before this, a direct
+  POST to `/_actions/submitCommission` was saved and emailed while the site said CLOSED.
+- Availability `waitlist` accepts requests (it used to behave exactly like `closed`). They're saved
+  with commission status `waitlisted`, the form and both emails say "waitlist", and the admin
+  filters and badges treat it as its own status. `status` is a text column: no migration.
+- Admin status changes go through a confirm dialog with an "email the client" checkbox and an
+  optional note (`sendEmail` / `statusNote` on the PATCH). The row dropdown used to save and email
+  on change. `PATCH /api/commissions/:id` rejects unknown statuses and reports the email outcome
+  in an `X-Status-Email: sent | failed | none` header, so the body stays the plain row.
+- The client confirmation goes to whatever address was typed and quotes the submission back, so
+  it's capped by `CONFIRMATION_LIMITS` (per address per day, site-wide per hour and per day),
+  counted from `commission_requests` in SQL. Over a cap, the request is still saved and the
+  artist still notified; only the confirmation is skipped, with a `[email]` warning. A counting
+  error fails open (sends). Keep that shape: no visible change for a real client.
+
+## Images and the upload widget
+
+`src/lib/cloudinary.ts` holds `cloudinaryTransform()` and the one widget-script loader. The public
+page requests sized copies for the avatar/icon and the comparison slider; the lightbox still
+opens the original on purpose. The helper leaves non-Cloudinary paths and URLs that already carry
+delivery params untouched (`homepage.spec.ts` asserts an exact pre-transformed avatar URL).
+Don't put the widget `<script>` back in `<head>`: it blocked first paint on every visit.
 
 ## Input allowlists on write routes
 
@@ -181,13 +206,15 @@ is how a live connection string ended up pasted into `NEONDB_BRANCH_SETUP.md`.
 ```
 npm run dev              # astro dev
 npm run build             # astro build
+npm test                  # vitest run (unit)
+npm run test:watch        # vitest (watch)
 npm run test:e2e          # playwright test
 npm run test:e2e:ui       # playwright test --ui (interactive)
 npm run test:e2e:report   # view last report
 ```
 
-No lint or unit-test script exists in `package.json` — don't assume `npm test` or `npm run lint`
-work here; they don't.
+`npm test` runs Vitest once; `npm run test:watch` keeps it running. No lint script exists —
+don't assume `npm run lint` works here; it doesn't.
 
 ## Database branches — which is which
 
@@ -222,4 +249,6 @@ All three failure modes were verified to abort. Keep the guard failing closed if
   (`astro.config.mjs`). The toolbar sits bottom-centre and intercepts clicks on the lightbox
   prev/next controls. Don't remove it.
 
-Full suite: 159 tests, all passing as of 2026-07-26.
+Full suite: 161 tests, all passing as of 2026-09-24. `admin-auth.spec.ts` "displays navigation
+tabs" can fail once on a cold dev server (the `client:only` island mounts after the 5s expect
+timeout while Vite compiles it under parallel load); it passes on re-run.

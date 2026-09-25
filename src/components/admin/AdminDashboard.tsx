@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import CloudinaryUploadWidget, { type CloudinaryUploadResult } from './CloudinaryUploadWidget';
 import type { PortfolioItem, CommissionRequest, SiteSettings } from '../../db/schema';
-import { PRICED_ART_TYPES, STYLES } from '../../lib/schemas';
+import { EMAILED_STATUSES, PRICED_ART_TYPES, STYLES, type CommissionStatus as KnownStatus } from '../../lib/schemas';
 
 interface AdminDashboardProps {
   cloudName: string;
@@ -9,7 +9,7 @@ interface AdminDashboardProps {
 }
 
 type Tab = 'gallery' | 'commissions' | 'settings';
-type CommissionStatus = 'all' | 'pending' | 'accepted' | 'in_progress' | 'completed' | 'declined';
+type CommissionStatus = 'all' | KnownStatus;
 type SortField = 'createdAt' | 'clientName' | 'status';
 type SortOrder = 'asc' | 'desc';
 type Notice = { kind: 'success' | 'error'; message: string };
@@ -22,11 +22,15 @@ const TABS: { id: Tab; label: (counts: { gallery: number; pending: number }) => 
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'pending', label: 'Pending' },
+  { value: 'waitlisted', label: 'Waitlisted' },
   { value: 'accepted', label: 'Accepted' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'completed', label: 'Completed' },
   { value: 'declined', label: 'Declined' },
 ];
+
+const statusLabel = (value: string) =>
+  STATUS_OPTIONS.find(o => o.value === value)?.label ?? value;
 
 /** Cloudinary delivery transform helper — resize on their CDN, not in the browser. */
 const thumb = (url: string, transform: string) => url.replace('/upload/', `/upload/${transform}/`);
@@ -48,6 +52,10 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
   const [editingNotes, setEditingNotes] = useState('');
   const [editingQuotedPrice, setEditingQuotedPrice] = useState<number | ''>('');
   const [pendingDelete, setPendingDelete] = useState<PortfolioItem | null>(null);
+  // A status change waits here for confirmation: it can email the client.
+  const [pendingStatus, setPendingStatus] = useState<{ commission: CommissionRequest; status: string } | null>(null);
+  const [notifyClient, setNotifyClient] = useState(true);
+  const [statusNote, setStatusNote] = useState('');
 
   // Form state for new gallery item
   const [newItem, setNewItem] = useState({
@@ -153,10 +161,14 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
     }
   };
 
+  /**
+   * PATCH a commission. Resolves to the server's X-Status-Email value
+   * ('sent' | 'failed' | 'none') on success, or null on failure.
+   */
   const handleUpdateCommission = async (
     id: number,
     updates: Partial<CommissionRequest>
-  ): Promise<boolean> => {
+  ): Promise<string | null> => {
     try {
       const res = await fetch(`/api/commissions/${id}`, {
         method: 'PATCH',
@@ -165,22 +177,54 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
       });
       if (!res.ok) {
         fail(await errorMessage(res, 'Failed to update commission'));
-        return false;
+        return null;
       }
       // Take the server's row rather than the optimistic patch, so fields the
       // server derives (updatedAt) stay in sync.
       const updated: CommissionRequest = await res.json();
       setCommissions(prev => prev.map(c => (c.id === id ? updated : c)));
       setSelectedCommission(prev => (prev?.id === id ? updated : prev));
-      return true;
+      return res.headers.get('X-Status-Email') ?? 'none';
     } catch (err) {
       fail('Failed to update commission. Check your connection.');
-      return false;
+      return null;
     }
   };
 
-  const handleUpdateCommissionStatus = (id: number, status: string) =>
-    handleUpdateCommission(id, { status });
+  /**
+   * Status dropdowns no longer save on change. A changed status for accepted,
+   * in progress, completed or declined emails the client, and a slip of the
+   * dropdown used to send that email with no chance to back out. The select
+   * is controlled by the saved row, so Cancel leaves it where it was.
+   */
+  const requestStatusChange = (commission: CommissionRequest, status: string) => {
+    setPendingStatus({ commission, status });
+    setNotifyClient(true);
+    setStatusNote('');
+  };
+
+  const confirmStatusChange = async () => {
+    if (!pendingStatus || isSaving) return;
+    const { commission, status } = pendingStatus;
+    const sendEmail = notifyClient && EMAILED_STATUSES.includes(status as KnownStatus);
+    setIsSaving(true);
+    const email = await handleUpdateCommission(commission.id, {
+      status,
+      sendEmail,
+      ...(sendEmail && statusNote.trim() ? { statusNote: statusNote.trim() } : {}),
+    } as Partial<CommissionRequest>);
+    setIsSaving(false);
+    setPendingStatus(null);
+    if (email === null) return;
+
+    const saved = `Commission #${commission.id} set to ${statusLabel(status)}`;
+    if (email === 'failed') {
+      // The status did change; only the email failed. Say so, don't hide it.
+      fail(`${saved}, but the email to ${commission.email} could not be sent.`);
+    } else {
+      succeed(email === 'sent' ? `${saved}. Emailed ${commission.email}.` : `${saved}. No email sent.`);
+    }
+  };
 
   const openCommissionDetail = (commission: CommissionRequest) => {
     setSelectedCommission(commission);
@@ -191,10 +235,10 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
   const saveCommissionDetails = async () => {
     if (!selectedCommission || isSaving) return;
     setIsSaving(true);
-    const success = await handleUpdateCommission(selectedCommission.id, {
+    const success = (await handleUpdateCommission(selectedCommission.id, {
       notes: editingNotes,
       quotedPrice: editingQuotedPrice === '' ? null : Number(editingQuotedPrice),
-    });
+    })) !== null;
     setIsSaving(false);
     if (success) succeed(`Commission #${selectedCommission.id} updated.`);
   };
@@ -523,7 +567,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                       </button>
                       <select
                         value={commission.status || 'pending'}
-                        onChange={e => handleUpdateCommissionStatus(commission.id, e.target.value)}
+                        onChange={e => requestStatusChange(commission, e.target.value)}
                         className="status-select"
                         aria-label={`Status for ${commission.clientName}`}
                       >
@@ -601,7 +645,7 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
                       <select
                         id="detail-status"
                         value={selectedCommission.status || 'pending'}
-                        onChange={e => handleUpdateCommissionStatus(selectedCommission.id, e.target.value)}
+                        onChange={e => requestStatusChange(selectedCommission, e.target.value)}
                       >
                         {STATUS_OPTIONS.map(({ value, label }) => (
                           <option key={value} value={value}>{label}</option>
@@ -639,6 +683,68 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
               </div>
             </div>
           )}
+
+          {/* Status change confirmation. Rendered after the detail modal so it
+              stacks on top of it when the change comes from there. */}
+          {pendingStatus && (() => {
+            const { commission, status } = pendingStatus;
+            const emailable = EMAILED_STATUSES.includes(status as KnownStatus);
+            return (
+              <div className="modal-overlay" onClick={() => setPendingStatus(null)}>
+                <div
+                  className="modal-content confirm-dialog status-confirm"
+                  role="alertdialog"
+                  aria-modal="true"
+                  aria-labelledby="status-confirm-title"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <h3 id="status-confirm-title">
+                    Change #{commission.id} to {statusLabel(status)}?
+                  </h3>
+                  <p>
+                    {commission.clientName}'s request is currently {statusLabel(commission.status || 'pending')}.
+                  </p>
+
+                  {emailable ? (
+                    <>
+                      <label className="email-toggle" htmlFor="status-email-toggle">
+                        <input
+                          id="status-email-toggle"
+                          type="checkbox"
+                          checked={notifyClient}
+                          onChange={e => setNotifyClient(e.target.checked)}
+                        />
+                        Email {commission.email} about this change
+                      </label>
+                      {notifyClient && (
+                        <div className="form-group">
+                          <label htmlFor="status-note">Note for the email (optional)</label>
+                          <textarea
+                            id="status-note"
+                            rows={3}
+                            value={statusNote}
+                            onChange={e => setStatusNote(e.target.value)}
+                            placeholder="Anything the client should know"
+                          />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p>No email is sent for this status.</p>
+                  )}
+
+                  <div className="confirm-actions">
+                    <button type="button" className="btn-secondary" onClick={() => setPendingStatus(null)}>
+                      Cancel
+                    </button>
+                    <button type="button" className="btn-save" disabled={isSaving} onClick={confirmStatusChange}>
+                      {isSaving ? 'Saving...' : emailable && notifyClient ? 'Save and email' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -665,6 +771,35 @@ export default function AdminDashboard({ cloudName, uploadPreset }: AdminDashboa
 
             <fieldset className="form-fieldset">
               <legend>Artist Profile</legend>
+              <div className="form-group">
+                <label>Profile Picture</label>
+                <p className="field-hint">Shown on the site header and used as the browser tab icon</p>
+                {settings.avatarUrl ? (
+                  <div className="preview-image">
+                    <img src={thumb(settings.avatarUrl, 'w_200,h_200,c_fill')} alt="Profile picture preview" />
+                    <button
+                      type="button"
+                      onClick={() => setSettings(prev => prev ? { ...prev, avatarUrl: null } : null)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <CloudinaryUploadWidget
+                    key="avatar-upload"
+                    id="avatar-upload"
+                    cloudName={cloudName}
+                    uploadPreset={uploadPreset}
+                    onUpload={result =>
+                      setSettings(prev => (prev ? { ...prev, avatarUrl: result.secure_url } : null))
+                    }
+                  />
+                )}
+                {!settings.avatarUrl && (
+                  <p className="field-hint">Falls back to the default picture until one is uploaded</p>
+                )}
+              </div>
+
               <div className="form-group">
                 <label htmlFor="artist-name">
                   Artist Name <span className="required-marker">*</span>

@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { checkAuth, unauthorizedResponse } from '../../../lib/auth';
 import { sendStatusUpdateEmail } from '../../../lib/email';
 import { resolveSiteConfig } from '../../../lib/settings';
+import { CommissionStatusEnum, EMAILED_STATUSES } from '../../../lib/schemas';
 
 // PATCH /api/commissions/:id - Update commission status
 export const PATCH: APIRoute = async ({ params, request }) => {
@@ -17,6 +18,15 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
     if (isNaN(id)) {
       return new Response(JSON.stringify({ error: 'Invalid ID' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // An unknown status would be stored as-is and fall out of every filter
+    // and badge in the dashboard.
+    if (body.status !== undefined && !CommissionStatusEnum.safeParse(body.status).success) {
+      return new Response(JSON.stringify({ error: `Unknown status "${body.status}"` }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -51,8 +61,19 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       .where(eq(commissionRequests.id, id))
       .returning();
 
-    // Send email notification if status changed (and sendEmail not explicitly false)
-    if (body.status && body.status !== current.status && body.sendEmail !== false) {
+    // Reported in a header rather than the body, so the body stays the plain
+    // row the dashboard stores. 'none' = no email was due or asked for.
+    let emailResult: 'sent' | 'failed' | 'none' = 'none';
+
+    // Send email notification if status changed (and sendEmail not explicitly
+    // false). Only statuses with a template: pending/waitlisted have none, and
+    // used to be logged as "not delivered" on every change.
+    if (
+      body.status &&
+      body.status !== current.status &&
+      body.sendEmail !== false &&
+      EMAILED_STATUSES.includes(body.status)
+    ) {
       const [settings] = await db.select().from(siteSettings).limit(1);
       const { artistName } = resolveSiteConfig(settings);
 
@@ -65,13 +86,14 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         updated.clientName,
         updated.id,
         body.status,
-        body.statusNote, // Optional note to include in the email
+        typeof body.statusNote === 'string' ? body.statusNote : undefined, // Optional note, escaped in the template
         artistName
       ).catch(err => {
         console.error('Status update email error:', err);
         return false;
       });
 
+      emailResult = sent ? 'sent' : 'failed';
       if (!sent) {
         console.warn(`[email] status update for commission #${updated.id} was not delivered`);
       }
@@ -79,7 +101,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
     return new Response(JSON.stringify(updated), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Status-Email': emailResult },
     });
   } catch (error) {
     console.error('Error updating commission:', error);
