@@ -1,9 +1,8 @@
 import type { APIRoute } from 'astro';
 import { db, siteSettings } from '../../db';
-import { eq } from 'drizzle-orm';
 import { checkAuth, unauthorizedResponse } from '../../lib/auth';
 import { cleanText, sanitizeString } from '../../lib/utils';
-import { DEFAULT_SITE_SETTINGS } from '../../lib/settings';
+import { DEFAULT_SITE_SETTINGS, SETTINGS_ROW_ID } from '../../lib/settings';
 import { SiteSettingsUpdateSchema, type SiteSettingsUpdate } from '../../lib/schemas';
 
 const json = (body: unknown, status = 200) =>
@@ -39,7 +38,7 @@ export const GET: APIRoute = async () => {
     const [settings] = await db.select().from(siteSettings).limit(1);
 
     if (!settings) {
-      return json({ id: 0, ...DB_DEFAULTS, avatarUrl: null });
+      return json({ id: SETTINGS_ROW_ID, ...DB_DEFAULTS, avatarUrl: null });
     }
 
     return json(settings);
@@ -99,24 +98,29 @@ export const PUT: APIRoute = async ({ request }) => {
       updates.avatarUrl = sanitizeString(updates.avatarUrl);
     }
 
-    const [existing] = await db.select().from(siteSettings).limit(1);
-
-    let result;
-    if (existing) {
-      [result] = await db
-        .update(siteSettings)
-        .set({ ...updates, updatedAt: new Date() })
-        .where(eq(siteSettings.id, existing.id))
-        .returning();
-    } else {
-      // DB_DEFAULTS, not DEFAULT_SITE_SETTINGS — see the comment above it.
-      // avatarUrl is left out entirely so a first save that never touches the
-      // avatar field stores null, not the bundled-asset path.
-      [result] = await db
-        .insert(siteSettings)
-        .values({ ...DB_DEFAULTS, ...updates })
-        .returning();
-    }
+    // Single atomic upsert rather than select-then-branch.
+    //
+    // The old read-decide-write was a TOCTOU race: two concurrent PUTs could
+    // both observe no row and both insert, leaving two site_settings rows for a
+    // table that must have exactly one. `limit(1)` would then pick between them
+    // arbitrarily, so the public page and the admin dashboard could disagree
+    // about prices. One admin makes that unlikely, not impossible.
+    //
+    // The insert branch seeds defaults for columns the payload omits; the
+    // conflict branch touches only what was sent, so a partial update cannot
+    // silently reset unrelated fields back to defaults.
+    //
+    // DB_DEFAULTS, not DEFAULT_SITE_SETTINGS — see the comment above it.
+    // avatarUrl is left out of the defaults so a first save that never touches
+    // the avatar field stores null, not the bundled-asset path.
+    const [result] = await db
+      .insert(siteSettings)
+      .values({ id: SETTINGS_ROW_ID, ...DB_DEFAULTS, ...updates })
+      .onConflictDoUpdate({
+        target: siteSettings.id,
+        set: { ...updates, updatedAt: new Date() },
+      })
+      .returning();
 
     return json(result);
   } catch (error) {
