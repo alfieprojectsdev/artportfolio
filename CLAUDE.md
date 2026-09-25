@@ -123,8 +123,10 @@ Where a document belongs:
 
 `notes/` was added 2026-07-28 when five unreferenced root-level docs were untracked
 (`JULES_EVALUATION_REPORT.md`, `PROJECT_MEMO.md`, `domain-options.md`, `v0-INTEGRATION.md`,
-`v0 UI-UX Analysis.md`). They remain on disk. The remaining root docs are kept because README or
-this file links to them — check for references before untracking anything else.
+`v0 UI-UX Analysis.md`). They were moved to `notes/` only on the machine that untracked them: on
+any other checkout, pulling that commit (`529b1bb`) deletes them from disk. To get one back, run
+`git show 529b1bb^:PROJECT_MEMO.md > notes/PROJECT_MEMO.md`. The remaining root docs are kept
+because README or this file links to them — check for references before untracking anything else.
 
 **Secrets:** a live Neon connection string was committed to this *public* repo in
 `NEONDB_BRANCH_SETUP.md` and two session logs. The working tree was redacted on 2026-07-26, but
