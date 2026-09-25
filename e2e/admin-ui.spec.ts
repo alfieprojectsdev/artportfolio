@@ -16,7 +16,7 @@ test.describe('Admin UI - Fieldsets and Layout', () => {
     context = await browser.newContext({
       httpCredentials: {
         username: 'admin',
-        password: process.env.ADMIN_PASSWORD || 'oxfordsnotbrogues',
+        password: process.env.ADMIN_PASSWORD || 'test-password',
       },
     });
     page = await context.newPage();

@@ -98,6 +98,22 @@ test.describe('Admin Settings Management', () => {
       await expect(waitlistOption).toHaveText('Waitlist');
     });
 
+    test('Profile Picture upload control exists', async () => {
+      // No coverage of the upload flow itself — same limitation as the gallery
+      // image widgets, which have no e2e coverage either, since the widget is
+      // an external Cloudinary script. This checks the control renders.
+      const label = page.locator('.settings-form .form-group label', { hasText: 'Profile Picture' });
+      await expect(label).toBeVisible();
+
+      const field = page.locator('.settings-form .form-group:has(label:has-text("Profile Picture"))');
+      // Renders either the upload button (no avatar set) or a preview with a
+      // Remove button (avatar set) — either is a pass, since which one shows
+      // depends on the settings row's current state, not on this test.
+      const hasUploadButton = await field.locator('.upload-btn').count();
+      const hasPreview = await field.locator('.preview-image').count();
+      expect(hasUploadButton + hasPreview).toBeGreaterThan(0);
+    });
+
     test('Artist Name input field exists', async () => {
       const label = page.locator('.settings-form .form-group label', { hasText: 'Artist Name' });
       await expect(label).toBeVisible();
