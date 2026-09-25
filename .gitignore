@@ -45,6 +45,11 @@ worktrees/
 # Session Logs (any directory — docs/ included)
 SESSION_LOG_*
 
+# One-off local notes: evaluation reports, shopping lists, superseded plans.
+# Anything worth keeping for the next contributor belongs in docs/ (tracked)
+# or in README/CLAUDE.md. This directory is for things only useful to you.
+notes/
+
 # Throwaway debugging artifacts — keep these out of the repo root.
 # See CLAUDE.md "Repo hygiene": scratch scripts belong in /tmp, not here.
 test_debug_*
