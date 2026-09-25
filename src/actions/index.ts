@@ -1,7 +1,7 @@
 import { ActionError, defineAction } from 'astro:actions';
 import { sql } from 'drizzle-orm';
 import { db, commissionRequests, siteSettings } from '../db';
-import { CommissionRequestSchema, calculateEstimatedPrice, pricingFromSettings } from '../lib/schemas';
+import { CommissionRequestSchema, acceptsRequests, calculateEstimatedPrice, pricingFromSettings } from '../lib/schemas';
 import { resolveSiteConfig } from '../lib/settings';
 import { sendNewCommissionNotification, sendCommissionConfirmation } from '../lib/email';
 
@@ -93,12 +93,15 @@ export const server = {
         // Same test index.astro uses to decide whether to show the form, so a
         // request can only arrive while the form is visible. Before this, a
         // direct POST was accepted (and emailed) while the site said CLOSED.
-        if (commissionStatus !== 'open') {
+        if (!acceptsRequests(commissionStatus)) {
           throw new ActionError({
             code: 'FORBIDDEN',
             message: 'Commissions are currently closed.',
           });
         }
+        // SiteConfig types this as the literal default ('open'); it's a string
+        // from the settings row at runtime.
+        const waitlisted = (commissionStatus as string) === 'waitlist';
 
         const estimatedPrice = calculateEstimatedPrice(
           input.artType,
@@ -118,7 +121,7 @@ export const server = {
             description: input.description,
             refImages: input.refImages,
             estimatedPrice,
-            status: 'pending',
+            status: waitlisted ? 'waitlisted' : 'pending',
           })
           .returning();
 
@@ -148,6 +151,7 @@ export const server = {
               description: newRequest.description,
               estimatedPrice: newRequest.estimatedPrice,
               refImages: newRequest.refImages || [],
+              waitlisted,
             }, artistName),
             'artist notification'
           ),
@@ -161,6 +165,7 @@ export const server = {
                   style: newRequest.style,
                   description: newRequest.description,
                   estimatedPrice: newRequest.estimatedPrice,
+                  waitlisted,
                 }, artistName),
                 'client confirmation'
               )
@@ -175,7 +180,9 @@ export const server = {
 
         return {
           success: true,
-          message: 'Commission request submitted successfully!',
+          message: waitlisted
+            ? "You're on the waitlist! I'll reach out when a slot opens."
+            : 'Commission request submitted successfully!',
           requestId: newRequest.id,
         };
       } catch (error) {

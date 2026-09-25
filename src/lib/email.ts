@@ -42,6 +42,8 @@ interface CommissionEmailData {
   description: string;
   estimatedPrice?: number | null;
   refImages?: string[];
+  /** Arrived while availability was `waitlist`; changes the wording only. */
+  waitlisted?: boolean;
 }
 
 /**
@@ -83,10 +85,12 @@ export async function sendNewCommissionNotification(
       to: [artistEmail],
       // Hitting reply goes to the client, not to the bot address.
       replyTo: commission.email,
-      subject: `New Commission Request from ${commission.clientName}`,
+      subject: commission.waitlisted
+        ? `New Waitlist Request from ${commission.clientName}`
+        : `New Commission Request from ${commission.clientName}`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #916A5D; margin-bottom: 20px;">New Commission Request!</h1>
+          <h1 style="color: #916A5D; margin-bottom: 20px;">${commission.waitlisted ? 'New Waitlist Request!' : 'New Commission Request!'}</h1>
 
           <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
             <h2 style="margin-top: 0; color: #333;">Client Information</h2>
@@ -157,14 +161,16 @@ export async function sendCommissionConfirmation(
       to: [commission.email],
       // Client replies reach the artist, not the send-only from address.
       ...(replyTo ? { replyTo } : {}),
-      subject: 'Commission Request Received!',
+      subject: commission.waitlisted ? "You're on the Waitlist!" : 'Commission Request Received!',
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #916A5D; margin-bottom: 20px;">Thank you for your commission request!</h1>
+          <h1 style="color: #916A5D; margin-bottom: 20px;">${commission.waitlisted ? "You're on the waitlist!" : 'Thank you for your commission request!'}</h1>
 
           <p>Hi ${escapeHtml(commission.clientName)},</p>
 
-          <p>I've received your commission request and will review it soon. Here's a summary of what you submitted:</p>
+          <p>${commission.waitlisted
+            ? "My commission slots are full right now, so your request has been added to the waitlist. Requests are taken in the order they arrive. Here's a summary of what you submitted:"
+            : "I've received your commission request and will review it soon. Here's a summary of what you submitted:"}</p>
 
           <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin: 20px 0;">
             <p><strong>Type:</strong> ${escapeHtml(commission.artType)}</p>
@@ -175,7 +181,9 @@ export async function sendCommissionConfirmation(
           <p><strong>Your request:</strong></p>
           <p style="background: #f5f5f5; padding: 15px; border-radius: 8px; white-space: pre-wrap;">${escapeHtml(commission.description)}</p>
 
-          <p style="margin-top: 20px;">I typically respond within <strong>1-3 business days</strong>. If your request is accepted, I'll reach out to discuss the details and payment.</p>
+          <p style="margin-top: 20px;">${commission.waitlisted
+            ? "I'll reach out when a slot opens up to confirm the details and payment."
+            : "I typically respond within <strong>1-3 business days</strong>. If your request is accepted, I'll reach out to discuss the details and payment."}</p>
 
           <p>Feel free to reply to this email if you have any questions!</p>
 

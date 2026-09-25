@@ -726,6 +726,17 @@ main.container {
   margin-top: var(--space-5);
 }
 
+.commission-form .waitlist-note {
+  background: var(--color-warning-soft);
+  color: var(--color-on-warning-soft);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-6);
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+}
+
 .commission-form .form-message {
   padding: var(--space-4);
   border-radius: var(--radius-md);

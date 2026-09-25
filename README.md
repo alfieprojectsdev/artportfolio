@@ -190,6 +190,25 @@ The rule every route follows:
   `unauthorizedResponse()` on failure.
 - `GET` is public **except** `/api/commissions`, which contains client PII.
 
+### Changing the admin password
+
+There's no reset flow because there's nothing stored to reset: the password is the
+`ADMIN_PASSWORD` environment variable. To change it:
+
+1. In Vercel, open the project's **Settings → Environment Variables** and edit `ADMIN_PASSWORD`
+   for Production.
+2. Redeploy (**Deployments →** latest → **Redeploy**). Environment changes only take effect on a
+   new deployment.
+3. Update `ADMIN_PASSWORD` in your local `.env.local` too, or the admin e2e tests will fail.
+
+With no sessions, the old password stops working as soon as the new deployment is live. Browsers
+cache Basic Auth credentials, so expect one fresh login prompt, or use a private window. Only
+someone with access to the Vercel project can change it; that's the recovery path if it's
+forgotten.
+
+Never use the real password as a fallback in test code. The specs fall back to `test-password`
+when `ADMIN_PASSWORD` isn't set.
+
 ## Security notes
 
 - Commission fields are user-supplied and land in HTML email templates. Every one of them must

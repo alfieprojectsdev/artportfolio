@@ -7,7 +7,9 @@ import { loadCloudinaryScript } from '../lib/cloudinary';
 interface CommissionFormProps {
   cloudName: string;
   uploadPreset: string;
-  isOpen: boolean; // Commission status from site settings
+  isOpen: boolean; // Whether the form takes requests (open or waitlist)
+  /** Availability is `waitlist`: same form, requests are saved as waitlisted. */
+  waitlist?: boolean;
   /**
    * Live prices from site_settings, passed down from the page. The estimate
    * shown here and the estimate stored by the action read the same table, so
@@ -20,6 +22,7 @@ export default function CommissionForm({
   cloudName,
   uploadPreset,
   isOpen,
+  waitlist = false,
   pricing = DEFAULT_PRICING,
 }: CommissionFormProps) {
   const [formData, setFormData] = useState({
@@ -173,7 +176,13 @@ export default function CommissionForm({
 
   return (
     <form onSubmit={handleSubmit} className="commission-form">
-      <h3>Request a Commission</h3>
+      <h3>{waitlist ? 'Join the Waitlist' : 'Request a Commission'}</h3>
+
+      {waitlist && (
+        <p className="waitlist-note">
+          My slots are full right now. Requests join the waitlist and are taken in the order they arrive.
+        </p>
+      )}
 
       {submitResult && (
         <div className={`form-message ${submitResult.success ? 'success' : 'error'}`}>
@@ -303,11 +312,12 @@ export default function CommissionForm({
       </div>
 
       <button type="submit" disabled={isSubmitting} className="submit-btn">
-        {isSubmitting ? 'Submitting...' : 'Submit Request'}
+        {isSubmitting ? 'Submitting...' : waitlist ? 'Join Waitlist' : 'Submit Request'}
       </button>
 
       <p className="form-note">
-        By submitting, you agree to the Terms of Service above. I'll respond within 1-3 days!
+        By submitting, you agree to the Terms of Service above.{' '}
+        {waitlist ? "I'll reach out when a slot opens!" : "I'll respond within 1-3 days!"}
       </p>
     </form>
   );

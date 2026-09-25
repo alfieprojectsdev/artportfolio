@@ -562,6 +562,10 @@ button[type='submit']:disabled,
   background: linear-gradient(90deg, var(--color-warning-soft) 0%, #fff 50%);
 }
 
+.commissions-table tr.status-waitlisted {
+  background: linear-gradient(90deg, var(--color-surface-alt) 0%, var(--color-surface) 50%);
+}
+
 .commissions-table tr.status-accepted {
   background: linear-gradient(90deg, var(--color-success-soft) 0%, #fff 50%);
 }
@@ -678,6 +682,11 @@ button[type='submit']:disabled,
 
 .status-badge.is-pending {
   background: var(--color-warning);
+}
+
+/* Queued behind open slots: deliberately quieter than pending. */
+.status-badge.is-waitlisted {
+  background: var(--color-text-muted);
 }
 
 .status-badge.is-accepted {
@@ -814,6 +823,34 @@ button[type='submit']:disabled,
 .confirm-dialog p {
   color: var(--color-text-muted);
   margin-bottom: var(--space-7);
+}
+
+/* Status-change confirmation: optional client email + note. */
+.status-confirm .email-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.status-confirm .email-toggle input {
+  width: auto;
+  margin: 0;
+}
+
+.status-confirm .form-group {
+  margin-bottom: var(--space-7);
+}
+
+/* .btn-save is a full-width form button elsewhere; here it sits in a row. */
+.confirm-actions .btn-save {
+  width: auto;
+  margin-top: 0;
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--text-sm);
 }
 
 .confirm-actions {
