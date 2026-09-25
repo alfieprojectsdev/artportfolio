@@ -5,9 +5,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ArtSlider from '../components/ArtSlider.astro';
 import CommissionForm from '../components/CommissionForm';
 import { resolveSiteConfig } from '../lib/settings';
-import { pricingFromSettings, PRICED_ART_TYPES } from '../lib/schemas';
+import { acceptsRequests, pricingFromSettings, PRICED_ART_TYPES } from '../lib/schemas';
 import { phpToUsd } from '../lib/utils';
 import { env } from '../lib/env';
+import { cloudinaryTransform } from '../lib/cloudinary';
 import '../styles/public.css';
 
 // Fetch data from database (SSR - runs on every request)
@@ -32,6 +33,16 @@ try {
 // Defaults merged over the settings row; blank/invisible values fall back, and
 // SQL-escaped quotes ("I''m") are repaired. See src/lib/settings.ts.
 const config = resolveSiteConfig(settings);
+
+// The avatar is drawn 88px wide and doubles as the site icon, but the stored
+// URL is the full upload (~2000px, ~650 KB). c_fill crops from the centre,
+// which is what object-fit: cover already does on screen.
+const avatarSrc = cloudinaryTransform(config.avatarUrl, 'c_fill,w_256,h_256,f_auto,q_auto');
+
+// Comparison-slider tiles are at most ~420px wide and 300px tall, but were
+// given the original uploads (4218px, 3+ MB each). 1000px covers 2x displays.
+// The lightbox deliberately still opens the original file.
+const sliderSrc = (url: string) => cloudinaryTransform(url, 'c_limit,w_1000,f_auto,q_auto');
 
 // The rate cards and the form estimate read the same table, so they can never
 // disagree the way the old hardcoded PRICING const did.
@@ -60,9 +71,8 @@ const categories = galleryItems.length > 0
   title={`${config.artistName}'s Commissions`}
   description={`Digital art commissions by ${config.artistName}. ${config.bio?.slice(0, 100)}...`}
   theme="public"
+  avatarUrl={avatarSrc}
 >
-  <!-- Cloudinary Upload Widget (for commission reference images) -->
-  <script slot="head" src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
 
   <!-- Floating Navigation -->
   <nav class="floating-nav" id="floatingNav" aria-label="Section navigation">
@@ -82,7 +92,7 @@ const categories = galleryItems.length > 0
 
   <header class="hero" id="top">
     <div class="container">
-      <img src="/assets/profile.jpg" alt={`${config.artistName} Avatar`} class="profile-pic">
+      <img src={avatarSrc} alt={`${config.artistName} Avatar`} class="profile-pic">
       <h1>{config.artistName}'s Commissions</h1>
       <p class="intro">{config.bio}</p>
       <div class:list={['status-badge', config.commissionStatus]}>
@@ -111,8 +121,8 @@ const categories = galleryItems.length > 0
             <div class="gallery-item" data-category={item.category}>
               {item.flatUrl ? (
                 <ArtSlider
-                  before={item.flatUrl}
-                  after={item.imageUrl}
+                  before={sliderSrc(item.flatUrl)}
+                  after={sliderSrc(item.imageUrl)}
                   alt={item.altText || item.title}
                 />
               ) : (
@@ -189,7 +199,8 @@ const categories = galleryItems.length > 0
         client:load
         cloudName={env.CLOUDINARY_CLOUD_NAME ?? ''}
         uploadPreset={env.CLOUDINARY_UPLOAD_PRESET ?? ''}
-        isOpen={config.commissionStatus === 'open'}
+        isOpen={acceptsRequests(config.commissionStatus)}
+        waitlist={config.commissionStatus === 'waitlist'}
         pricing={pricing}
       />
     </section>

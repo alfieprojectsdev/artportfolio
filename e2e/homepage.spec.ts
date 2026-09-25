@@ -7,11 +7,56 @@ test.describe('Homepage', () => {
   });
 
   test.describe('Hero Section', () => {
-    test('displays profile image', async ({ page }) => {
+    // playwright.config.ts sets fullyParallel: true, which schedules every
+    // test independently regardless of file or describe grouping — tests in
+    // one file are NOT guaranteed to run in order just because they're in the
+    // same file. The two avatar tests below share the site_settings row's
+    // avatar_url column, so without this they can interleave: one test's PUT
+    // window can be live while the other's page.goto() reads the same field,
+    // producing an intermittent failure that has nothing to do with the code
+    // under test. Same hazard admin-settings.spec.ts already guards against.
+    test.describe.configure({ mode: 'serial' });
+
+    test('displays profile image, falling back to the bundled default', async ({ page }) => {
+      // site_settings.avatar_url is null in the seeded row, so this exercises
+      // resolveSiteConfig's fallback rather than a hardcoded path — see the
+      // "renders an uploaded avatar" test below for the non-default path.
       await page.goto('/');
       const profileImage = page.locator('.profile-pic');
       await expect(profileImage).toBeVisible();
       await expect(profileImage).toHaveAttribute('src', '/assets/profile.jpg');
+    });
+
+    test('renders an uploaded avatar and reverts to the default on removal', async ({ page, request }) => {
+      // No real Cloudinary upload here — same limitation as the gallery image
+      // widgets, which have no e2e coverage of the upload flow itself. This
+      // exercises the read path: PUT a URL, confirm it renders, then PUT null
+      // and confirm the fallback returns. Mirrors commission-form.spec.ts's
+      // use of `request` for direct API calls.
+      const auth = 'Basic ' + Buffer.from(`admin:${process.env.ADMIN_PASSWORD || 'test-password'}`).toString('base64');
+      const uploadedUrl = 'https://res.cloudinary.com/demo/image/upload/w_200,h_200,c_fill/e2e-avatar-test.jpg';
+
+      const put = await request.put('/api/settings', {
+        headers: { Authorization: auth, 'Content-Type': 'application/json' },
+        data: { avatarUrl: uploadedUrl },
+      });
+      expect(put.ok()).toBeTruthy();
+
+      try {
+        await page.goto('/');
+        await expect(page.locator('.profile-pic')).toHaveAttribute('src', uploadedUrl);
+      } finally {
+        // Always revert, even if the assertion above fails, so this test
+        // cannot leave the settings row in a state that breaks other tests.
+        const reset = await request.put('/api/settings', {
+          headers: { Authorization: auth, 'Content-Type': 'application/json' },
+          data: { avatarUrl: null },
+        });
+        expect(reset.ok()).toBeTruthy();
+      }
+
+      await page.goto('/');
+      await expect(page.locator('.profile-pic')).toHaveAttribute('src', '/assets/profile.jpg');
     });
 
     test('displays artist name heading', async ({ page }) => {

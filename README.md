@@ -27,14 +27,27 @@ dynamic gallery and streamlined content management.
 
 ## 🗺️ Roadmap
 
-**Current Status:** The site serves as a professional showcase for Adie's portfolio and commission
-prices, and now accepts commission requests directly rather than only via Discord and Instagram
-DMs.
+**Current Status:** Live at **[dementedb.red](https://dementedb.red)**. The site serves as a
+professional showcase for the artist's portfolio and commission prices, and accepts commission
+requests directly rather than only via Discord and Instagram DMs.
 
-**Upcoming:**
-* Verified sending domain so client-facing confirmation email is delivered, not just artist
-  notifications (see Environment below).
-* Artist name threaded into email templates, which currently hardcode "Bred".
+**Notifications are working.** A submitted request is committed to the database first, then the
+artist is emailed and the client gets a confirmation. Because the record is written before any
+email is attempted, `/admin` → Commissions is the reliable source of truth: a mail failure can
+never lose a request.
+
+**Recent updates:**
+* Custom domain with TLS on both the apex and `www`, and a Resend-verified sending domain — so
+  client-facing confirmation and status emails are delivered, not just artist notifications.
+* Commission emails are awaited rather than fired and forgotten. Unawaited sends were being killed
+  mid-request when the serverless instance suspended, so no email had ever actually left the app.
+* Email templates take the artist's name from site settings instead of hardcoding it, so renaming
+  in `/admin` propagates.
+* Server-rendered timestamps are pinned to `Asia/Manila` rather than the runtime's UTC.
+* Page CSS moved out of scoped Astro `<style>` blocks — see *Styling* below; this is the one
+  convention worth reading before touching any stylesheet.
+
+**Upcoming:** tracked in [issues](https://github.com/alfieprojectsdev/artportfolio/issues).
 
 *See `IMPLEMENTATION-NOTES.md` for code structure and `MIGRATION_GUIDE.md` for resetting database
 seeds. `CLAUDE.md` carries the conventions and the traps worth knowing before changing anything.*
@@ -182,6 +195,25 @@ The rule every route follows:
 - Every mutating verb (POST / PUT / PATCH / DELETE) calls `checkAuth()` first and returns
   `unauthorizedResponse()` on failure.
 - `GET` is public **except** `/api/commissions`, which contains client PII.
+
+### Changing the admin password
+
+There's no reset flow because there's nothing stored to reset: the password is the
+`ADMIN_PASSWORD` environment variable. To change it:
+
+1. In Vercel, open the project's **Settings → Environment Variables** and edit `ADMIN_PASSWORD`
+   for Production.
+2. Redeploy (**Deployments →** latest → **Redeploy**). Environment changes only take effect on a
+   new deployment.
+3. Update `ADMIN_PASSWORD` in your local `.env.local` too, or the admin e2e tests will fail.
+
+With no sessions, the old password stops working as soon as the new deployment is live. Browsers
+cache Basic Auth credentials, so expect one fresh login prompt, or use a private window. Only
+someone with access to the Vercel project can change it; that's the recovery path if it's
+forgotten.
+
+Never use the real password as a fallback in test code. The specs fall back to `test-password`
+when `ADMIN_PASSWORD` isn't set.
 
 ## Security notes
 
